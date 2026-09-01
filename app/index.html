@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>Lacuna</title>
+  </head>
+  <body>
+    <div id="app">
+      <pre id="boot-fallback" style="white-space:pre-wrap;padding:1rem;padding-top:calc(1rem + env(safe-area-inset-top));font:12px monospace;color:#c00;"></pre>
+    </div>
+    <script>
+      // Filet de sécurité synchrone : si le script module principal ne
+      // charge pas du tout (avant même que main.ts ait pu poser ses propres
+      // handlers), on veut au moins un indice visible plutôt qu'un écran
+      // blanc muet sur un appareil sans Web Inspector à portée de main.
+      window.addEventListener('error', function (e) {
+        var el = document.getElementById('boot-fallback')
+        if (el) el.textContent += 'window error: ' + (e.message || e) + '\n'
+      })
+      setTimeout(function () {
+        var el = document.getElementById('boot-fallback')
+        if (el && !window.__lacunaMounted) {
+          el.textContent += 'main.ts ne s\'est pas exécuté après 3s (script non chargé ?)\n'
+        }
+      }, 3000)
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

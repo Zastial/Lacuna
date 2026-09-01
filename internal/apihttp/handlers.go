@@ -12,13 +12,30 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewMux(pool *pgxpool.Pool) *http.ServeMux {
+func NewMux(pool *pgxpool.Pool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /feeds", listFeeds(pool))
 	mux.HandleFunc("GET /episodes", listEpisodes(pool))
 	mux.HandleFunc("GET /episodes/{id}/segments", episodeSegments(pool))
 	mux.HandleFunc("GET /healthz", healthz(pool))
-	return mux
+	return withCORS(mux)
+}
+
+// withCORS autorise les appels cross-origin depuis l'app mobile (WKWebView
+// sert le contenu depuis capacitor://localhost ou http://localhost, une
+// origine différente de celle de l'API) — client unique, aucune donnée
+// sensible exposée, une autorisation large est donc sans risque ici.
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 type feedJSON struct {

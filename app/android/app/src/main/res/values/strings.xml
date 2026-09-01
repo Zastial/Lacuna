@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lacuna</string>
+    <string name="title_activity_main">Lacuna</string>
+    <string name="package_name">com.zastial.lacuna</string>
+    <string name="custom_url_scheme">com.zastial.lacuna</string>
+</resources>
