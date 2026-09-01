@@ -18,7 +18,7 @@ const itunesNS = "http://www.itunes.com/dtds/podcast-1.0.dtd"
 const userAgent = "Lacuna-Spike/0.1 (+podcast research; contact via github)"
 
 type rssFeed struct {
-	XMLName xml.Name  `xml:"rss"`
+	XMLName xml.Name   `xml:"rss"`
 	Channel rssChannel `xml:"channel"`
 }
 

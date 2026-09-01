@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+
+	"lacuna/internal/transcript"
 )
 
 const maxConcurrentFeeds = 5
@@ -87,12 +89,12 @@ func probeFeed(ctx context.Context, feed Feed) FeedReport {
 			return report
 		}
 
-		var cues []Cue
+		var cues []transcript.Cue
 		var perr error
 		if format == "vtt" {
-			cues, perr = ParseVTT(bytes.NewReader(tbody))
+			cues, perr = transcript.ParseVTT(bytes.NewReader(tbody))
 		} else {
-			cues, perr = ParseSRT(bytes.NewReader(tbody))
+			cues, perr = transcript.ParseSRT(bytes.NewReader(tbody))
 		}
 		if perr != nil {
 			report.Status = "transcript_parse_error"

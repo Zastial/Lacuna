@@ -1,4 +1,4 @@
-package main
+package transcript
 
 import (
 	"bufio"
@@ -20,6 +20,15 @@ type Cue struct {
 
 var vttTimingRe = regexp.MustCompile(`(\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}\s*-->\s*(\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}`)
 
+// vttTagRe reconnaît les balises inline WebVTT (<v Speaker 1>, <c>, <b>, <i>,
+// horodatages <00:00:01.000>...) : de la mise en forme, pas du contenu à
+// garder dans le texte du segment.
+var vttTagRe = regexp.MustCompile(`<[^>]*>`)
+
+func stripTags(s string) string {
+	return strings.TrimSpace(vttTagRe.ReplaceAllString(s, ""))
+}
+
 // ParseVTT lit un fichier WebVTT et renvoie les cues dans l'ordre. Tolère les
 // identifiants de cue optionnels et les lignes NOTE/STYLE en les ignorant.
 func ParseVTT(r io.Reader) ([]Cue, error) {
@@ -39,11 +48,15 @@ func ParseVTT(r io.Reader) ([]Cue, error) {
 
 		var textLines []string
 		for scanner.Scan() {
-			l := strings.TrimSpace(scanner.Text())
-			if l == "" {
-				break
+			raw := scanner.Text()
+			if strings.TrimSpace(raw) == "" {
+				break // ligne vide = fin du bloc de cue
 			}
-			textLines = append(textLines, l)
+			if l := stripTags(raw); l != "" {
+				textLines = append(textLines, l)
+			}
+			// une ligne réduite à des balises (ex: horodatage inline) ne
+			// produit aucun texte, mais n'arrête pas le bloc pour autant.
 		}
 		cues = append(cues, Cue{Start: start, End: end, Text: strings.Join(textLines, " ")})
 	}
@@ -76,11 +89,13 @@ func ParseSRT(r io.Reader) ([]Cue, error) {
 
 		var textLines []string
 		for scanner.Scan() {
-			l := strings.TrimSpace(scanner.Text())
-			if l == "" {
+			raw := scanner.Text()
+			if strings.TrimSpace(raw) == "" {
 				break
 			}
-			textLines = append(textLines, l)
+			if l := stripTags(raw); l != "" {
+				textLines = append(textLines, l)
+			}
 		}
 		cues = append(cues, Cue{Start: start, End: end, Text: strings.Join(textLines, " ")})
 	}

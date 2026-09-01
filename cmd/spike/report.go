@@ -13,9 +13,9 @@ import (
 // simple booléen — on veut savoir POURQUOI un flux échoue pour trancher les
 // replis du §8 en connaissance de cause).
 type FeedReport struct {
-	Feed  Feed
+	Feed   Feed
 	Status string // ok | no_transcript | http_403 | http_5xx | fetch_error | parse_error | empty_feed | transcript_parse_error | empty_transcript
-	Error string
+	Error  string
 
 	EpisodeTitle       string
 	Format             string
