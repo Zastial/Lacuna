@@ -1,0 +1,9 @@
+# Go
+/bin/
+/spike
+*.exe
+*.test
+*.out
+
+# OS
+.DS_Store

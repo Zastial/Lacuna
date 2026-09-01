@@ -1,0 +1,101 @@
+Lacuna — Phase 0 spike transcripts — 2026-09-01T18:40:22+02:00
+17 flux testés
+
+=== Latino USA (en / native) ===
+url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/eba15fe4-c3fd-4e63-a8f9-b2dc01092685/a324c6a1-2e41-486b-b538-b2dc010926c5/podcast.rss
+status: ok
+episode: The Meaning of the Magical Chihuahua
+format: vtt
+segments: 399
+duree_moyenne_segment: 4.1s
+duree_episode: 29m14s
+couverture_temporelle: 100%
+
+=== Up First (NPR) (en / native) ===
+url: https://feeds.npr.org/510318/podcast.xml
+status: no_transcript
+
+=== This American Life (en / native) ===
+url: https://feeds.thisamericanlife.org/talpodcast
+status: no_transcript
+
+=== Freakonomics Radio (en / native) ===
+url: https://www.omnycontent.com/d/playlist/aaea4e69-af51-495e-afc9-a9760146922b/14a43378-edb2-49be-8511-ab0d000a7030/d1b9612f-bb1b-4b85-9c0c-ab0d004ab37a/podcast.rss
+status: no_transcript
+
+=== In The Thick (en / native) ===
+url: https://feeds.acast.com/public/shows/in-the-thick-ad-free
+status: no_transcript
+
+=== Reveal (en / native) ===
+url: https://feeds.revealradio.org/revealpodcast
+status: no_transcript
+
+=== Radio Ambulante (es / native) ===
+url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/b3c9b6e7-72ba-45c4-aff9-b1e7012d213b/092b66a8-4329-4183-bb12-b1e7012d216f/podcast.rss
+status: ok
+episode: La ciudad de la memoria y otras historias del Perú
+format: vtt
+segments: 650
+duree_moyenne_segment: 3.3s
+duree_episode: 41m57s
+couverture_temporelle: 100%
+
+=== El Hilo (es / native) ===
+url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/b9075595-43ce-4bdd-9a4c-b1ea01352a3d/e4eb1040-260e-4556-a9c7-b1ea01352a67/podcast.rss
+status: ok
+episode: El trabajo sucio de la política digital y el poder real
+format: vtt
+segments: 639
+duree_moyenne_segment: 3.4s
+duree_episode: 39m52s
+couverture_temporelle: 99%
+
+=== Hoy Hablamos (es / learner_intermediate) ===
+url: https://www.hoyhablamos.com/category/podcast/feed/
+status: http_403
+error: status 403
+
+=== Español Automático (es / learner_intermediate) ===
+url: https://espanolautomatico.libsyn.com/rss
+status: no_transcript
+
+=== Notes in Spanish (Intermediate) (es / learner_intermediate) ===
+url: https://intnotesinspanish.libsyn.com/rss
+status: no_transcript
+
+=== Notes in Spanish (Inspired Beginners) (es / learner_beginner) ===
+url: https://learnrealspanish.libsyn.com/rss
+status: no_transcript
+
+=== Podcast Italiano Principiante (it / learner_beginner) ===
+url: https://feeds.acast.com/public/shows/668fd0eaa0179c311c39e769
+status: ok
+episode: #130 - Vero o falso? Con Irene e Davide
+format: vtt
+segments: 218
+duree_moyenne_segment: 5.4s
+duree_episode: 25m9s
+couverture_temporelle: 89%
+
+=== Podcast Italiano (Intermediate/Advanced) (it / learner_intermediate) ===
+url: https://feeds.buzzsprout.com/2413795.rss
+status: no_transcript
+
+=== Coffee Break Italian (it / learner_beginner) ===
+url: https://feeds.acast.com/public/shows/86766c5f-1580-450f-9376-bd74b57fcfbb
+status: no_transcript
+
+=== News in Slow Italian (it / learner_beginner) ===
+url: https://nsi.libsyn.com/rss
+status: no_transcript
+
+=== LearnAmo (it / learner_beginner) ===
+url: https://learnamo.com/feed/podcast/
+status: http_403
+error: status 403
+
+=== Résumé par langue ===
+en : 1/6 flux exploitables — ❌ critère non atteint (< 2)
+es : 2/6 flux exploitables — ✅ critère atteint
+it : 1/5 flux exploitables — ❌ critère non atteint (< 2)
