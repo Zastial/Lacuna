@@ -17,12 +17,13 @@ type FeedReport struct {
 	Status string // ok | no_transcript | http_403 | http_5xx | fetch_error | parse_error | empty_feed | transcript_parse_error | empty_transcript
 	Error string
 
-	EpisodeTitle    string
-	Format          string
-	EpisodeDuration time.Duration
-	CueCount        int
-	CoverageRatio   float64 // 0 si la durée d'épisode était inconnue
-	AvgCueDuration  time.Duration
+	EpisodeTitle       string
+	Format             string
+	TranscriptLanguage string // attribut "language" de la balise podcast:transcript, si présent
+	EpisodeDuration    time.Duration
+	CueCount           int
+	CoverageRatio      float64 // 0 si la durée d'épisode était inconnue
+	AvgCueDuration     time.Duration
 }
 
 func (r FeedReport) exploitable() bool {
@@ -77,6 +78,9 @@ func writeReport(reports []FeedReport, path string) error {
 		if r.exploitable() {
 			fmt.Fprintf(&b, "episode: %s\n", r.EpisodeTitle)
 			fmt.Fprintf(&b, "format: %s\n", r.Format)
+			if r.TranscriptLanguage != "" && r.TranscriptLanguage != r.Feed.Lang {
+				fmt.Fprintf(&b, "ATTENTION langue transcript déclarée = %q (≠ %s attendu) — vérifier manuellement avant utilisation\n", r.TranscriptLanguage, r.Feed.Lang)
+			}
 			fmt.Fprintf(&b, "segments: %d\n", r.CueCount)
 			fmt.Fprintf(&b, "duree_moyenne_segment: %s\n", r.AvgCueDuration.Round(100*time.Millisecond))
 			if r.EpisodeDuration > 0 {

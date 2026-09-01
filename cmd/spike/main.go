@@ -77,6 +77,7 @@ func probeFeed(ctx context.Context, feed Feed) FeedReport {
 
 		report.EpisodeTitle = item.Title
 		report.Format = format
+		report.TranscriptLanguage = t.Language
 		report.EpisodeDuration = parseItunesDuration(item.Duration)
 
 		tbody, tstatus, terr := fetchWithRetry(ctx, t.URL)

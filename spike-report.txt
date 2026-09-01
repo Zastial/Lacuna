@@ -1,5 +1,5 @@
-Lacuna — Phase 0 spike transcripts — 2026-09-01T18:40:22+02:00
-17 flux testés
+Lacuna — Phase 0 spike transcripts — 2026-09-01T18:45:55+02:00
+24 flux testés
 
 === Latino USA (en / native) ===
 url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/eba15fe4-c3fd-4e63-a8f9-b2dc01092685/a324c6a1-2e41-486b-b538-b2dc010926c5/podcast.rss
@@ -31,6 +31,24 @@ status: no_transcript
 url: https://feeds.revealradio.org/revealpodcast
 status: no_transcript
 
+=== Fresh Air (NPR) (en / native) ===
+url: https://feeds.npr.org/381444908/podcast.xml
+status: no_transcript
+
+=== Ear Hustle (en / native) ===
+url: https://feeds.earhustlesq.com/earhustlesq
+status: no_transcript
+
+=== The Moment with Jorge Ramos and Paola Ramos (en / native) ===
+url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/759cedb2-b3e2-4407-a599-b34d00fb38a6/bffd2c26-6b20-4ca7-bf31-b34d00fb3cab/podcast.rss
+status: ok
+episode: Summer of Socialism: The Rise of the DSA
+format: vtt
+segments: 1057
+duree_moyenne_segment: 3.1s
+duree_episode: 57m52s
+couverture_temporelle: 100%
+
 === Radio Ambulante (es / native) ===
 url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/b3c9b6e7-72ba-45c4-aff9-b1e7012d213b/092b66a8-4329-4183-bb12-b1e7012d216f/podcast.rss
 status: ok
@@ -50,6 +68,16 @@ segments: 639
 duree_moyenne_segment: 3.4s
 duree_episode: 39m52s
 couverture_temporelle: 99%
+
+=== Central (Radio Ambulante Studios) (es / native) ===
+url: https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/0367bfd5-c9a2-4b46-b584-b1ea013507bc/50dacf3a-5b3c-4655-bae4-b1ea013507ef/podcast.rss
+status: ok
+episode: Las Reinas de Queens | 10. Más allá de la Rúsbel
+format: vtt
+segments: 539
+duree_moyenne_segment: 3.5s
+duree_episode: 34m23s
+couverture_temporelle: 100%
 
 === Hoy Hablamos (es / learner_intermediate) ===
 url: https://www.hoyhablamos.com/category/podcast/feed/
@@ -95,7 +123,26 @@ url: https://learnamo.com/feed/podcast/
 status: http_403
 error: status 403
 
+=== Italiano Automatico (it / learner_beginner) ===
+url: https://italianoautomatico.podomatic.com/rss2.xml
+status: no_transcript
+
+=== Italy Made Easy (100% in Italiano) (it / learner_intermediate) ===
+url: https://feed.pod.co/italy-made-easy-podcast
+status: no_transcript
+
+=== Easy Italian (Spreaker) (it / learner_beginner) ===
+url: https://www.spreaker.com/show/6604621/episodes/feed
+status: ok
+episode: ✅ Learn Italian in LESS THAN 10 minutes | Lesson 4 |
+format: vtt
+ATTENTION langue transcript déclarée = "en" (≠ it attendu) — vérifier manuellement avant utilisation
+segments: 62
+duree_moyenne_segment: 4.6s
+duree_episode: 6m22s
+couverture_temporelle: 99%
+
 === Résumé par langue ===
-en : 1/6 flux exploitables — ❌ critère non atteint (< 2)
-es : 2/6 flux exploitables — ✅ critère atteint
-it : 1/5 flux exploitables — ❌ critère non atteint (< 2)
+en : 2/9 flux exploitables — ✅ critère atteint
+es : 3/7 flux exploitables — ✅ critère atteint
+it : 2/8 flux exploitables — ✅ critère atteint
