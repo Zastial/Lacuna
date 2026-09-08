@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS review_state;
+DROP TABLE IF EXISTS capture;
