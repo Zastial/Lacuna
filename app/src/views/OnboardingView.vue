@@ -1,0 +1,207 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { CATEGORIES, useSettingsStore } from '../stores/settings'
+import { tapFeedback } from '../services/feedback'
+
+const emit = defineEmits<{ done: [] }>()
+const settings = useSettingsStore()
+
+const step = ref(0)
+const LAST_STEP = 2
+
+// On ne laisse pas continuer sans langue ni sans au moins un centre
+// d'intérêt : arriver sur un écran vide au premier lancement est la pire
+// première impression possible, et c'est exactement ce qui arriverait.
+const canContinue = computed(() => {
+  if (step.value === 1) return Boolean(settings.targetLang)
+  if (step.value === 2) return settings.categories.length > 0
+  return true
+})
+
+async function onLang(lang: string): Promise<void> {
+  void tapFeedback()
+  await settings.setTargetLang(lang)
+}
+
+async function onCategory(id: string): Promise<void> {
+  void tapFeedback()
+  await settings.toggleCategory(id)
+}
+
+async function next(): Promise<void> {
+  void tapFeedback()
+  if (step.value < LAST_STEP) {
+    step.value += 1
+    return
+  }
+  await settings.completeOnboarding()
+  emit('done')
+}
+</script>
+
+<template>
+  <div class="onboarding">
+    <div class="dots">
+      <span v-for="i in LAST_STEP + 1" :key="i" :class="{ on: i - 1 <= step }" />
+    </div>
+
+    <div class="body">
+      <template v-if="step === 0">
+        <p class="kicker">Bienvenue</p>
+        <h1>Lacuna</h1>
+        <p class="lead">
+          Apprendre une langue avec ce que tu regardes déjà : des vidéos
+          récentes, dans tes centres d'intérêt, et des exercices qui
+          reviennent au bon moment.
+        </p>
+      </template>
+
+      <template v-else-if="step === 1">
+        <p class="kicker">Étape 1</p>
+        <h1>Quelle langue ?</h1>
+        <p class="lead">Tu pourras en changer à tout moment.</p>
+        <div class="choices">
+          <button class="choice big" :class="{ on: settings.targetLang === 'it' }" @click="onLang('it')">
+            <span class="flag">🇮🇹</span>
+            <span>Italiano</span>
+          </button>
+          <button class="choice big" :class="{ on: settings.targetLang === 'es' }" @click="onLang('es')">
+            <span class="flag">🇪🇸</span>
+            <span>Español</span>
+          </button>
+        </div>
+      </template>
+
+      <template v-else>
+        <p class="kicker">Étape 2</p>
+        <h1>Qu'est-ce qui t'intéresse ?</h1>
+        <p class="lead">
+          On te proposera des vidéos et des temps forts récents sur ces
+          sujets, dans la langue choisie.
+        </p>
+        <div class="choices">
+          <button
+            v-for="c in CATEGORIES"
+            :key="c.id"
+            class="choice"
+            :class="{ on: settings.categories.includes(c.id) }"
+            @click="onCategory(c.id)"
+          >
+            <span class="flag">{{ c.icon }}</span>
+            <span>{{ c.label }}</span>
+          </button>
+        </div>
+      </template>
+    </div>
+
+    <button class="cta" :disabled="!canContinue" @click="next">
+      {{ step === LAST_STEP ? 'Commencer' : 'Continuer' }}
+    </button>
+  </div>
+</template>
+
+<style scoped>
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  padding-top: calc(1.5rem + env(safe-area-inset-top));
+  background: var(--bg);
+  color: var(--ink);
+}
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 2rem;
+}
+.dots span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  transition: background 0.25s ease;
+}
+.dots span.on {
+  background: var(--teal);
+}
+.body {
+  flex: 1;
+  overflow-y: auto;
+}
+.kicker {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.4rem;
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+  color: var(--teal-ink);
+}
+.lead {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0 0 1.75rem;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 1rem 1.15rem;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.choice.big {
+  padding: 1.25rem 1.15rem;
+  font-size: 1.15rem;
+}
+.choice.on {
+  border-color: transparent;
+  background: var(--teal);
+  color: var(--on-teal);
+  font-weight: 700;
+}
+.flag {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.cta {
+  flex: none;
+  margin-top: 1.25rem;
+  padding: 1.05rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--teal);
+  color: var(--on-teal);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.cta:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+</style>

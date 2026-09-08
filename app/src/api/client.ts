@@ -1,4 +1,4 @@
-import type { ApiArticle, ApiEpisode, ApiEpisodeSegments, ApiFeed, Capture, ReviewState } from '../types/models'
+import type { ApiArticle, ApiEpisode, ApiEpisodeSegments, ApiFeed, ApiVideo, Capture, ReviewState } from '../types/models'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 
@@ -35,6 +35,21 @@ export function listEpisodes(params: { lang?: string; level?: string } = {}): Pr
 
 export function getEpisodeSegments(episodeId: number): Promise<ApiEpisodeSegments> {
   return getJSON<ApiEpisodeSegments>(`/episodes/${episodeId}/segments`)
+}
+
+export function listVideos(
+  params: { lang?: string; limit?: number; categories?: string[] } = {},
+): Promise<ApiVideo[]> {
+  const qs = new URLSearchParams()
+  if (params.lang) qs.set('lang', params.lang)
+  if (params.limit) qs.set('limit', String(params.limit))
+  // Liste vide = pas de filtre côté API. L'envoyer quand même reviendrait à
+  // demander « aucune catégorie », donc aucune vidéo.
+  if (params.categories && params.categories.length > 0) {
+    qs.set('categories', params.categories.join(','))
+  }
+  const suffix = qs.toString() ? `?${qs.toString()}` : ''
+  return getJSON<ApiVideo[]>(`/videos${suffix}`)
 }
 
 export function listArticles(

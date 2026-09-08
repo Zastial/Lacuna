@@ -16,6 +16,15 @@ export const SPORTS = [
   { id: 'volley', label: 'Volley' },
 ] as const
 
+// Centres d'intérêt : ils décident des chaînes YouTube proposées. La valeur
+// est celle stockée en base dans video_channel.category.
+export const CATEGORIES = [
+  { id: 'langue', label: 'Apprendre la langue', icon: '💬' },
+  { id: 'sport', label: 'Sport', icon: '⚽️' },
+  { id: 'musique', label: 'Musique', icon: '🎧' },
+  { id: 'informatique', label: 'Informatique', icon: '💻' },
+] as const
+
 const KEY = 'lacuna.settings'
 
 // applyTheme pose l'attribut lu par style.css. 'auto' le retire plutôt que
@@ -32,6 +41,9 @@ export type ThemeChoice = 'auto' | 'light' | 'dark'
 
 export interface SettingsState {
   theme: ThemeChoice
+  // Faux tant que l'onboarding n'a pas été terminé une fois.
+  onboarded: boolean
+  categories: string[]
   // Langue dans laquelle les notifications sont traduites.
   targetLang: string
   sports: string[]
@@ -45,6 +57,10 @@ export interface SettingsState {
 
 const DEFAULTS: Omit<SettingsState, 'loaded'> = {
   theme: 'auto',
+  onboarded: false,
+  // Par défaut tout est coché : sans choix, mieux vaut trop de contenu que
+  // pas de contenu du tout. L'onboarding remplace ça par un vrai choix.
+  categories: ['langue', 'sport', 'musique', 'informatique'],
   targetLang: 'it',
   sports: ['football'],
   notifySport: true,
@@ -73,11 +89,23 @@ export const useSettingsStore = defineStore('settings', {
     },
 
     async save(): Promise<void> {
-      const { theme, targetLang, sports, notifySport, notifyPhrase, notifyReview, notifyHour } = this
+      const {
+        theme,
+        onboarded,
+        categories,
+        targetLang,
+        sports,
+        notifySport,
+        notifyPhrase,
+        notifyReview,
+        notifyHour,
+      } = this
       await Preferences.set({
         key: KEY,
         value: JSON.stringify({
           theme,
+          onboarded,
+          categories,
           targetLang,
           sports,
           notifySport,
@@ -86,6 +114,18 @@ export const useSettingsStore = defineStore('settings', {
           notifyHour,
         }),
       })
+    },
+
+    async toggleCategory(id: string): Promise<void> {
+      this.categories = this.categories.includes(id)
+        ? this.categories.filter((c) => c !== id)
+        : [...this.categories, id]
+      await this.save()
+    },
+
+    async completeOnboarding(): Promise<void> {
+      this.onboarded = true
+      await this.save()
     },
 
     async setTheme(theme: ThemeChoice): Promise<void> {

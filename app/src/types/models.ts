@@ -221,3 +221,18 @@ export interface CultureStats {
   correct: number
   total: number
 }
+
+// Vidéo YouTube proposée par centre d'intérêt. Pas de transcript : YouTube ne
+// sert plus ses sous-titres aux clients tiers, donc pas d'unité de révision
+// dérivée d'une vidéo — c'est du contenu à regarder, pas à découper.
+export interface ApiVideo {
+  id: number
+  youtube_id: string
+  channel_name: string
+  lang: string
+  category: string
+  title: string
+  description: string
+  thumbnail_url: string
+  published_at: string | null
+}

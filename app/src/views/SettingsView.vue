@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { SPORTS, useSettingsStore } from '../stores/settings'
+import { CATEGORIES, SPORTS, useSettingsStore } from '../stores/settings'
 import type { ThemeChoice } from '../stores/settings'
 import { sendPreview, syncNotifications } from '../services/notifications'
 import { prepareTranslation, translationStatus } from '../services/translate'
+import { useVideosStore } from '../stores/videos'
 import { tapFeedback } from '../services/feedback'
 
 const emit = defineEmits<{ back: [] }>()
 const settings = useSettingsStore()
+const videos = useVideosStore()
 
 // État du moteur de traduction Apple pour la paire français → langue cible.
 // 'installed' : prêt. 'supported' : le modèle existe mais reste à
@@ -41,10 +43,19 @@ async function apply(): Promise<void> {
 
 async function onLang(lang: string): Promise<void> {
   await settings.setTargetLang(lang)
+  // Le fil vidéo suit la langue cible : la changer ici doit se voir sur
+  // l'accueil sans avoir à relancer l'app.
+  await videos.setLang(lang)
   // La disponibilité du modèle dépend de la paire : changer de langue
   // cible peut faire passer de « prêt » à « à télécharger ».
   await refreshMT()
   await apply()
+}
+
+async function onCategory(id: string): Promise<void> {
+  void tapFeedback()
+  await settings.toggleCategory(id)
+  await videos.fetch()
 }
 
 async function onSport(id: string): Promise<void> {
@@ -98,6 +109,20 @@ async function onPreview(): Promise<void> {
           @click="onTheme(t.id)"
         >
           {{ t.label }}
+        </button>
+      </div>
+
+      <p class="label section-label">Tes centres d'intérêt</p>
+      <p class="hint">Ils décident des vidéos proposées sur l'accueil.</p>
+      <div class="chips">
+        <button
+          v-for="c in CATEGORIES"
+          :key="c.id"
+          class="chip"
+          :class="{ on: settings.categories.includes(c.id) }"
+          @click="onCategory(c.id)"
+        >
+          {{ c.icon }} {{ c.label }}
         </button>
       </div>
 

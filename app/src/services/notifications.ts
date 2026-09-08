@@ -7,7 +7,7 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 
 import { listArticles } from '../api/client'
 import { scenariosForLang } from '../data/fondations'
-import { countDueReviewItems } from '../db/repository'
+import { countDueCultureItems, getDueVocabItems } from '../db/repository'
 import { NATIVE_LANG, translateFromNative, translationStatus } from './translate'
 import type { SettingsState } from '../stores/settings'
 
@@ -73,7 +73,15 @@ export async function syncNotifications(settings: SettingsState): Promise<void> 
     }
 
     if (settings.notifyReview) {
-      const due = await countDueReviewItems(Date.now())
+      // Les segments audio ont disparu avec le mode podcast : ce qui reste
+      // à réviser, ce sont les formes verbales de Fondations et les
+      // questions de Culture G, chacune avec sa propre file FSRS.
+      const now = Date.now()
+      const [vocab, culture] = await Promise.all([
+        getDueVocabItems(settings.targetLang, now, 500),
+        countDueCultureItems(settings.targetLang, now),
+      ])
+      const due = vocab.length + culture
       if (due > 0) {
         notifications.push({
           id: ID_REVIEW,
