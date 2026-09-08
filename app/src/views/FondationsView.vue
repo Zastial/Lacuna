@@ -1,219 +1,236 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { LANGS, useSettingsStore } from '../stores/settings'
 import { useFondationsStore } from '../stores/fondations'
-import { completionFeedback, correctFeedback, wrongFeedback } from '../services/feedback'
-import type { ConjugItem, ScenarioMCQOption } from '../types/models'
+import { correctFeedback, tapFeedback, wrongFeedback } from '../services/feedback'
+import type { ConjugItem } from '../types/models'
 
 const emit = defineEmits<{ back: [] }>()
+const settings = useSettingsStore()
 const fondations = useFondationsStore()
 
-fondations.init()
-
 const answered = ref(false)
-const isCorrect = ref(false)
-const feedbackHint = ref('')
+const chosen = ref('')
 
-watch(
-  () => fondations.session?.stepIndex,
-  () => {
-    answered.value = false
-    feedbackHint.value = ''
-  },
-)
+onMounted(async () => {
+  if (!settings.loaded) await settings.load()
+  await fondations.setLang(settings.primaryLang)
+})
 
-function onHeaderBack(): void {
-  if (!fondations.session) {
-    emit('back')
-    return
-  }
-  if (fondations.session.stepIndex > 0) fondations.back()
-  else void fondations.exitSession()
+const choices = computed(() => LANGS.filter((l) => settings.langs.includes(l.id)))
+const isCorrect = computed(() => chosen.value === fondations.currentItem?.answer)
+
+function clearAnswer(): void {
+  answered.value = false
+  chosen.value = ''
 }
 
-function selectMcqOption(option: ScenarioMCQOption, hint: string): void {
+async function onLang(id: string): Promise<void> {
+  void tapFeedback()
+  await fondations.setLang(id)
+}
+
+function start(): void {
+  void tapFeedback()
+  fondations.startLesson()
+}
+
+async function review(): Promise<void> {
+  void tapFeedback()
+  await fondations.startReview()
+}
+
+function beginPractice(): void {
+  void tapFeedback()
+  clearAnswer()
+  fondations.beginPractice()
+}
+
+async function choose(item: ConjugItem, option: string): Promise<void> {
   if (answered.value) return
   answered.value = true
-  isCorrect.value = option.correct
-  feedbackHint.value = option.correct ? '' : hint
-  void (option.correct ? correctFeedback() : wrongFeedback())
+  chosen.value = option
+  const ok = option === item.answer
+  void (ok ? correctFeedback() : wrongFeedback())
+  await fondations.answer(item, ok)
 }
 
-async function selectConjugOption(item: ConjugItem, choice: string): Promise<void> {
-  if (answered.value) return
-  answered.value = true
-  isCorrect.value = choice === item.answer
-  void (isCorrect.value ? correctFeedback() : wrongFeedback())
-  await fondations.gradeConjugItem(item, isCorrect.value)
-}
-
-function onNext(): void {
+function next(): void {
+  void tapFeedback()
+  clearAnswer()
   fondations.next()
-  const step = fondations.currentStep
-  if (step?.kind === 'done' || step?.kind === 'drillDone') void completionFeedback()
 }
 
-async function onFinish(): Promise<void> {
-  await fondations.next()
-  await fondations.exitSession()
+function retry(): void {
+  void tapFeedback()
+  clearAnswer()
+  fondations.retryWrong()
+}
+
+async function finish(): Promise<void> {
+  void tapFeedback()
+  clearAnswer()
+  await fondations.endSession()
 }
 </script>
 
 <template>
   <div class="fondations">
     <header>
-      <button class="back" @click="onHeaderBack">←</button>
+      <button class="back" @click="fondations.session ? finish() : emit('back')">←</button>
       <p class="wordmark">Fondations</p>
     </header>
 
-    <div v-if="!fondations.session" class="picker">
-      <div class="lang-switch">
-        <button class="gold" :class="{ active: fondations.lang === 'it' }" @click="fondations.setLang('it')">Italiano</button>
-        <button class="plum" :class="{ active: fondations.lang === 'es' }" @click="fondations.setLang('es')">Español</button>
+    <!-- ACCUEIL : ce qu'on apprend, où on en est, ce qui reste. -->
+    <div v-if="!fondations.session" class="body">
+      <div v-if="choices.length > 1" class="seg">
+        <button
+          v-for="l in choices"
+          :key="l.id"
+          :class="{ active: fondations.lang === l.id }"
+          @click="onLang(l.id)"
+        >
+          {{ l.flag }} {{ l.label }}
+        </button>
       </div>
 
-      <template v-if="Object.keys(fondations.verbMastery).length > 0">
-        <p class="label section-label">Tes verbes</p>
-        <div class="mastery-row">
-          <span v-for="(tier, verb) in fondations.verbMastery" :key="verb" class="verb-chip" :class="tier">
-            {{ verb }}
-          </span>
+      <p v-if="fondations.loading" class="loading">Chargement…</p>
+
+      <template v-else>
+        <div class="progress-card glass">
+          <p class="label">Ton parcours</p>
+          <p class="progress-num">
+            {{ fondations.doneCount }} <span>/ {{ fondations.lessons.length }} leçons</span>
+          </p>
+          <div class="bar">
+            <div
+              class="fill"
+              :style="{
+                width: `${(fondations.doneCount / Math.max(1, fondations.lessons.length)) * 100}%`,
+              }"
+            />
+          </div>
+          <p class="hint">
+            Chaque leçon présente les six formes d'un verbe, puis les fait
+            pratiquer. Ce que tu rates revient plus souvent.
+          </p>
         </div>
-      </template>
 
-      <button class="drill-btn" @click="fondations.startQuickDrill()">
-        Entraînement rapide — sans son
-        <span v-if="fondations.dueDrillCount > 0" class="drill-badge">{{ fondations.dueDrillCount }}</span>
-      </button>
-
-      <p class="label section-label">Scénarios</p>
-      <ul class="scenario-list">
-        <li v-for="s in fondations.scenarios" :key="s.id">
-          <button class="glass scenario-btn" @click="fondations.startScenario(s.id)">
-            <span>{{ s.title }}</span>
-            <span v-if="fondations.completedIds.has(s.id)" class="check-badge">✓</span>
+        <template v-if="fondations.currentLesson">
+          <p class="label section-label">Leçon suivante</p>
+          <button class="lesson-btn glass" @click="start">
+            <span class="lesson-verb">{{ fondations.currentLesson.verb.lemma }}</span>
+            <span class="lesson-meta">
+              {{ fondations.currentLesson.verb.fr }} · {{ fondations.currentLesson.tenseLabel }}
+            </span>
+            <span class="lesson-forms">6 formes à découvrir puis pratiquer</span>
           </button>
+        </template>
+        <p v-else class="hint">Tout le parcours est terminé. Les révisions continuent.</p>
+
+        <p class="label section-label">Révisions</p>
+        <button v-if="fondations.dueCount > 0" class="review-btn" @click="review">
+          Réviser {{ fondations.dueCount }} forme{{ fondations.dueCount > 1 ? 's' : '' }}
+        </button>
+        <p v-else class="hint">
+          Rien à réviser pour l'instant — reviens plus tard, ou avance dans le parcours.
+        </p>
+      </template>
+    </div>
+
+    <!-- DÉCOUVRIR : on montre avant de demander. -->
+    <div v-else-if="fondations.session.phase === 'discover'" class="body">
+      <p class="label">On découvre</p>
+      <h2>
+        {{ fondations.session.lesson?.verb.lemma }}
+        <span class="h2-fr">{{ fondations.session.lesson?.verb.fr }}</span>
+      </h2>
+      <p class="tense">{{ fondations.session.lesson?.tenseLabel }}</p>
+
+      <ul class="forms">
+        <li v-for="f in fondations.session.lesson?.forms" :key="f.itemId">
+          <span class="pronoun">{{ f.pronoun }}</span>
+          <span class="form">{{ f.form }}</span>
         </li>
       </ul>
     </div>
 
-    <div v-else class="session">
-      <div class="dots">
-        <div
-          v-for="(_, i) in fondations.session.steps"
-          :key="i"
-          class="dot"
-          :class="{ filled: i <= fondations.session!.stepIndex }"
-        />
-      </div>
+    <!-- PRATIQUER : exactement les formes qu'on vient de voir. -->
+    <div v-else-if="fondations.session.phase === 'practice' && fondations.currentItem" class="body">
+      <p class="label">
+        {{ fondations.session.kind === 'review' ? 'Révision' : 'À toi' }}
+        · {{ fondations.session.step + 1 }}/{{ fondations.session.items.length }}
+      </p>
+      <p class="verb-label">
+        {{ fondations.currentItem.verb }}
+        <template v-if="fondations.currentItem.hint"> — {{ fondations.currentItem.hint }}</template>
+        · {{ fondations.currentItem.tense }}
+      </p>
+      <p class="prompt">{{ fondations.currentItem.prompt }}</p>
 
-      <div class="step-body" v-if="fondations.currentStep">
-        <template v-if="fondations.currentStep.kind === 'dialogue'">
-          <h2>{{ fondations.currentStep.scenario.title }}</h2>
-          <button class="sub-toggle" @click="fondations.toggleSubtitleLang()">
-            Sous-titres : {{ fondations.subtitleLang === 'fr' ? 'français' : (fondations.lang === 'it' ? 'italien' : 'espagnol') }}
-          </button>
-          <div class="dialogue-lines">
-            <div v-for="(l, i) in fondations.currentStep.scenario.dialogue" :key="i" class="line">
-              <p class="speaker">{{ l.speaker }}</p>
-              <p class="line-text">{{ fondations.subtitleLang === 'fr' ? l.fr : l.target }}</p>
-            </div>
-          </div>
-          <div class="vocab-chips">
-            <span v-for="(v, i) in fondations.currentStep.scenario.vocab" :key="i" class="chip">
-              <strong>{{ v.target }}</strong> — {{ v.fr }}
-            </span>
-          </div>
-        </template>
-
-        <template v-else-if="fondations.currentStep.kind === 'mcq'">
-          <h2>Mise en situation</h2>
-          <p class="prompt">{{ fondations.currentStep.mcq.prompt }}</p>
-          <p v-if="answered" class="prompt-fr">{{ fondations.currentStep.mcq.fr }}</p>
-          <div class="options">
-            <button
-              v-for="(o, i) in fondations.currentStep.mcq.options"
-              :key="i"
-              class="option"
-              :class="{ correct: answered && o.correct, wrong: answered && !o.correct }"
-              :disabled="answered"
-              @click="selectMcqOption(o, fondations.currentStep.kind === 'mcq' ? fondations.currentStep.mcq.hint : '')"
-            >
-              {{ o.target }}
-              <!-- La traduction s'affiche sur TOUTES les options, pas
-                   seulement la bonne : comprendre pourquoi les autres étaient
-                   fausses est la moitié de l'exercice. -->
-              <span v-if="answered" class="option-fr">{{ o.fr }}</span>
-            </button>
-          </div>
-          <p v-if="answered" class="feedback" :class="{ ok: isCorrect, ko: !isCorrect }">
-            {{ isCorrect ? 'Exact.' : feedbackHint }}
-          </p>
-        </template>
-
-        <template v-else-if="fondations.currentStep.kind === 'conjug'">
-          <h2>Entraînement mêlé</h2>
-          <p class="verb-label">
-            {{ fondations.currentStep.item.verb }}
-            <template v-if="fondations.currentStep.item.hint"> — {{ fondations.currentStep.item.hint }}</template>
-            · {{ fondations.currentStep.item.tense }}
-          </p>
-          <p class="prompt">{{ fondations.currentStep.item.prompt }}</p>
-          <div class="options">
-            <button
-              v-for="o in fondations.currentStep.item.options"
-              :key="o"
-              class="option"
-              :class="{ correct: answered && o === fondations.currentStep.item.answer, wrong: answered && o !== fondations.currentStep.item.answer }"
-              :disabled="answered"
-              @click="selectConjugOption(fondations.currentStep.item, o)"
-            >
-              {{ o }}
-            </button>
-          </div>
-          <template v-if="answered">
-            <p class="feedback" :class="{ ok: isCorrect, ko: !isCorrect }">
-              {{ isCorrect ? 'Exact.' : `La bonne réponse était « ${fondations.currentStep.item.answer} ».` }}
-            </p>
-            <!-- Phrase reconstituée avec le blanc rempli : c'est elle qu'on
-                 veut mémoriser, pas l'énoncé troué. -->
-            <p class="solution">
-              {{ fondations.currentStep.item.prompt.replace('___', fondations.currentStep.item.answer) }}
-            </p>
-            <p v-if="fondations.currentStep.item.promptFr" class="prompt-fr">
-              {{ fondations.currentStep.item.promptFr }}
-            </p>
-          </template>
-        </template>
-
-        <template v-else-if="fondations.currentStep.kind === 'done'">
-          <div class="done-panel">
-            <div class="big-badge celebrate">✓</div>
-            <p class="done-label">Terminé</p>
-            <p class="hint">Les formes verbales rejoignent ta révision espacée.</p>
-          </div>
-        </template>
-
-        <template v-else-if="fondations.currentStep.kind === 'drillDone'">
-          <div class="done-panel">
-            <div class="big-badge celebrate">✓</div>
-            <p class="done-label">Terminé</p>
-            <p class="hint">{{ fondations.currentStep.count }} carte{{ fondations.currentStep.count > 1 ? 's' : '' }} révisée{{ fondations.currentStep.count > 1 ? 's' : '' }}.</p>
-          </div>
-        </template>
-      </div>
-
-      <div class="nav">
+      <div class="options">
         <button
-          v-if="fondations.currentStep?.kind === 'done' || fondations.currentStep?.kind === 'drillDone'"
-          class="next primary"
-          @click="onFinish"
+          v-for="o in fondations.currentItem.options"
+          :key="o"
+          class="option"
+          :class="{
+            correct: answered && o === fondations.currentItem.answer,
+            wrong: answered && o === chosen && !isCorrect,
+          }"
+          :disabled="answered"
+          @click="choose(fondations.currentItem, o)"
         >
-          Retour aux scénarios
-        </button>
-        <button v-else class="next primary" :disabled="fondations.currentStep?.kind !== 'dialogue' && !answered" @click="onNext">
-          Suivant
+          {{ o }}
         </button>
       </div>
+
+      <template v-if="answered">
+        <p class="feedback" :class="isCorrect ? 'ok' : 'ko'">
+          {{ isCorrect ? 'Exact.' : `La bonne réponse était « ${fondations.currentItem.answer} ».` }}
+        </p>
+        <p class="solution">
+          {{ fondations.currentItem.prompt.replace('___', fondations.currentItem.answer) }}
+        </p>
+        <p v-if="fondations.currentItem.promptFr" class="prompt-fr">
+          {{ fondations.currentItem.promptFr }}
+        </p>
+      </template>
+    </div>
+
+    <!-- BILAN : ce qui est acquis, ce qui revient. -->
+    <div v-else class="body">
+      <p class="label">Bilan</p>
+      <h2 v-if="fondations.session.wrong.length === 0">Tout est juste.</h2>
+      <h2 v-else>
+        {{ fondations.session.wrong.length }}
+        forme{{ fondations.session.wrong.length > 1 ? 's' : '' }} à retravailler
+      </h2>
+      <p class="hint">
+        Ce que tu as manqué reviendra plus tôt que le reste — c'est la
+        répétition espacée qui décide du moment.
+      </p>
+    </div>
+
+    <div v-if="fondations.session" class="controls">
+      <button v-if="fondations.session.phase === 'discover'" class="primary" @click="beginPractice">
+        J'ai compris — pratiquer
+      </button>
+
+      <button
+        v-else-if="fondations.session.phase === 'practice'"
+        class="primary"
+        :disabled="!answered"
+        @click="next"
+      >
+        Suivant
+      </button>
+
+      <template v-else>
+        <button v-if="fondations.session.wrong.length > 0" class="secondary" @click="retry">
+          Refaire les ratées
+        </button>
+        <button class="primary" @click="finish">Terminer</button>
+      </template>
     </div>
   </div>
 </template>
@@ -228,9 +245,9 @@ async function onFinish(): Promise<void> {
 }
 header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   padding-top: calc(0.75rem + env(safe-area-inset-top));
 }
 .back {
@@ -247,20 +264,17 @@ header {
   margin: 0;
   color: var(--teal-ink);
 }
-.picker {
+.body {
   flex: 1;
-  padding: 0 1rem 1rem;
+  padding: 0.5rem 1.25rem 1.25rem;
   overflow-y: auto;
 }
-.section-label {
-  margin: 1.25rem 0 0.6rem;
-}
-.lang-switch {
+.seg {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
 }
-.lang-switch button {
+.seg button {
   flex: 1;
   padding: 0.7rem;
   border-radius: 16px;
@@ -270,74 +284,100 @@ header {
   font-weight: 500;
   cursor: pointer;
 }
-.lang-switch button.gold.active {
+.seg button.active {
   border-color: transparent;
-  background: var(--gold);
-  color: var(--on-gold);
-  font-weight: 700;
-}
-.lang-switch button.plum.active {
-  border-color: transparent;
-  background: var(--plum);
-  color: var(--on-plum);
-  font-weight: 700;
-}
-.mastery-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.verb-chip {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.85rem;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--glass);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-}
-.verb-chip.bronze {
-  background: var(--coral-wash);
-  color: var(--coral-ink);
-}
-.verb-chip.silver {
-  background: var(--glass-strong);
-  color: var(--ink);
-}
-.verb-chip.gold {
-  background: var(--gold-wash);
-  color: var(--gold-ink);
-}
-.drill-btn {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1rem;
-  margin-top: 1.25rem;
-  border-radius: 16px;
-  border: none;
-  background: var(--teal-wash);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  color: var(--teal-ink);
-}
-.drill-badge {
-  min-width: 1.4rem;
-  padding: 0 0.3rem;
-  border-radius: 999px;
   background: var(--teal);
   color: var(--on-teal);
-  font-family: var(--font-body);
   font-weight: 700;
-  font-size: 0.8rem;
-  line-height: 1.4rem;
 }
-.scenario-list {
+.progress-card {
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.progress-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  margin: 0.3rem 0 0.6rem;
+  color: var(--teal-ink);
+}
+.progress-num span {
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  background: var(--teal);
+  transition: width 0.4s ease;
+}
+.section-label {
+  margin: 1.5rem 0 0.6rem;
+}
+.lesson-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 1.1rem 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+.lesson-verb {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--teal-ink);
+}
+.lesson-meta {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.lesson-forms {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+.review-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--coral);
+  color: var(--on-coral);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.9rem;
+  margin: 0.2rem 0;
+}
+.h2-fr {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-left: 0.5rem;
+}
+.tense {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 1.25rem;
+}
+.forms {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -345,173 +385,72 @@ header {
   flex-direction: column;
   gap: 0.5rem;
 }
-.scenario-btn {
-  width: 100%;
+.forms li {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  text-align: left;
-  padding: 0.9rem 1.1rem;
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 1rem;
-  color: var(--ink);
-  cursor: pointer;
-}
-.session {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0 1.25rem;
-  overflow-y: auto;
-}
-.dots {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 1rem;
-}
-.dot {
-  flex: 1;
-  height: 5px;
-  border-radius: 3px;
-  background: var(--line);
-}
-.dot.filled {
-  background: var(--teal);
-}
-.step-body {
-  flex: 1;
-}
-h2 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  margin: 0 0 0.75rem;
-  font-size: 1.15rem;
-  color: var(--ink);
-}
-.sub-toggle {
-  display: block;
-  margin-left: auto;
-  margin-bottom: 0.75rem;
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  background: var(--glass);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.35rem 0.75rem;
-  cursor: pointer;
-  color: var(--ink-soft);
-}
-.dialogue-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.line {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
   border-radius: 16px;
-  padding: 0.65rem 0.9rem;
+  background: var(--teal-wash);
 }
-.speaker {
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-faint);
-  margin: 0 0 2px;
-}
-.line-text {
-  font-family: var(--font-body);
-  margin: 0;
-  font-size: 1rem;
-}
-.vocab-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-}
-.chip {
-  background: var(--coral-wash);
-  color: var(--coral-ink);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-}
-.prompt {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 1.05rem;
-  margin: 0 0 1rem;
-}
-.prompt-fr {
-  font-family: var(--font-body);
+.pronoun {
+  min-width: 4.5rem;
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--ink-soft);
-  margin: -0.6rem 0 1rem;
 }
-.solution {
+.form {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.15rem;
-  margin: 0.75rem 0 0.2rem;
-}
-.option-fr {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.85rem;
-  font-style: italic;
-  opacity: 0.75;
+  font-size: 1.25rem;
+  color: var(--teal-ink);
 }
 .verb-label {
   font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--ink-faint);
-  margin: 0 0 0.5rem;
+  margin: 0.4rem 0 0.5rem;
+}
+.prompt {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0 0 1.25rem;
 }
 .options {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.6rem;
 }
 .option {
-  text-align: left;
-  padding: 0.85rem 1.1rem;
-  border-radius: 16px;
+  width: 100%;
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
   border: 1px solid var(--line);
   background: var(--glass);
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 1rem;
   color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  text-align: left;
   cursor: pointer;
 }
 .option.correct {
   border-color: transparent;
   background: var(--teal);
   color: var(--on-teal);
-  font-weight: 600;
+  font-weight: 700;
 }
 .option.wrong {
   border-color: transparent;
   background: var(--coral-wash);
   color: var(--coral-ink);
 }
-.option:disabled {
-  cursor: default;
-}
 .feedback {
-  margin-top: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin: 1rem 0 0;
 }
 .feedback.ok {
   color: var(--teal-ink);
@@ -519,24 +458,34 @@ h2 {
 .feedback.ko {
   color: var(--coral-ink);
 }
-.done-panel {
-  text-align: center;
-  padding: 2rem 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+.solution {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0.75rem 0 0.2rem;
+}
+.prompt-fr {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: 0;
 }
 .hint {
   color: var(--ink-soft);
   font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.6rem 0 0;
 }
-.nav {
-  padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom));
+.controls {
+  flex: none;
+  display: flex;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
 }
-.next {
-  width: 100%;
-  padding: 1rem;
+.controls button {
+  flex: 1;
+  padding: 1.05rem;
   border-radius: 999px;
   border: none;
   font-family: var(--font-display);
@@ -544,11 +493,16 @@ h2 {
   font-size: 1.05rem;
   cursor: pointer;
 }
-.next.primary {
+.controls .primary {
   background: var(--teal);
   color: var(--on-teal);
 }
-.next:disabled {
+.controls .secondary {
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--ink);
+}
+.controls button:disabled {
   opacity: 0.4;
   cursor: default;
 }

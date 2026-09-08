@@ -66,7 +66,7 @@ function formatDate(iso: string | null): string {
     <nav class="main-nav">
       <button class="nav-btn pill teal" @click="emit('fondations')">
         <span class="nav-label">Fondations</span>
-        <span v-if="fondations.dueDrillCount > 0" class="nav-badge">{{ fondations.dueDrillCount }}</span>
+        <span v-if="fondations.dueCount > 0" class="nav-badge">{{ fondations.dueCount }}</span>
       </button>
       <button class="nav-btn pill coral" @click="emit('parler')">
         <span class="nav-label">Parler</span>

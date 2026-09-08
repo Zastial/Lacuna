@@ -10,6 +10,7 @@
 //  - les distracteurs sont les AUTRES personnes du même verbe, c'est-à-dire
 //    précisément les formes qu'on confond — un distracteur tiré d'un autre
 //    verbe serait éliminable sans rien savoir de la conjugaison.
+import { findConjugItem } from '../data/fondations'
 import { ES_VERBS } from '../data/verbs/es'
 import { IT_VERBS } from '../data/verbs/it'
 import { conjugate, PERSONS, PRONOUNS, TENSE_LABELS, type Person, type Tense, type Verb } from './conjugator'
@@ -29,6 +30,29 @@ export function generatedItemId(lang: string, lemma: string, tense: Tense, perso
 // buildDrill produit l'item pour une combinaison précise. Renvoie null si le
 // verbe n'est pas conjugable à ce temps (garde-fou : mieux vaut sauter un
 // item que d'en poser un dont la réponse serait fausse).
+// Les scénarios écrits à la main contiennent des phrases contextualisées et
+// traduites — « io ___ italiano / je suis italien » — bien plus utiles qu'un
+// « io ___ » nu. Elles ne couvrent que io et tu, sous un autre schéma d'id.
+//
+// On récupère leur ÉNONCÉ mais on garde l'id généré : deux ids pour la même
+// connaissance scinderaient la révision espacée en deux états divergents.
+function handwrittenPrompt(
+  lang: string,
+  lemma: string,
+  tense: Tense,
+  person: Person,
+  answer: string,
+): { prompt: string; promptFr?: string } | null {
+  const pronoun = person === '1sg' ? 'io' : person === '2sg' ? 'tu' : null
+  if (!pronoun) return null
+
+  const written = findConjugItem(lang, `${lang}-${lemma}-${pronoun}-${TENSE_LABELS[lang][tense]}`)
+  // La réponse doit coïncider : un énoncé écrit pour une autre forme
+  // rendrait la question fausse.
+  if (!written || written.answer !== answer) return null
+  return { prompt: written.prompt, promptFr: written.promptFr }
+}
+
 export function buildDrill(lang: string, verb: Verb, tense: Tense, person: Person): ConjugItem | null {
   const forms = conjugate(lang, verb, tense)
   if (!forms) return null
@@ -42,11 +66,14 @@ export function buildDrill(lang: string, verb: Verb, tense: Tense, person: Perso
   const distractors = shuffle([...new Set(forms.filter((f) => f !== answer))]).slice(0, 2)
   if (distractors.length < 2) return null
 
+  const written = handwrittenPrompt(lang, verb.lemma, tense, person, answer)
+
   return {
     id: generatedItemId(lang, verb.lemma, tense, person),
     verb: verb.lemma,
     tense: TENSE_LABELS[lang][tense],
-    prompt: `${PRONOUNS[lang][person]} ___`,
+    prompt: written?.prompt ?? `${PRONOUNS[lang][person]} ___`,
+    promptFr: written?.promptFr,
     options: shuffle([answer, ...distractors]),
     answer,
     hint: verb.fr,

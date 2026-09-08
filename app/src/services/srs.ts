@@ -9,6 +9,13 @@ const scheduler = fsrs(generatorParameters({ enable_fuzz: true }))
 
 export type Grade = 'again' | 'good'
 
+// Une forme est acquise quand la DERNIÈRE réponse était juste, pas dès
+// qu'elle a été rencontrée : `reps` s'incrémente aussi sur un échec, et s'y
+// fier faisait compter comme apprise une leçon entièrement ratée.
+export function isAcquired(state: { lastGrade: number | null }): boolean {
+  return state.lastGrade === Rating.Good
+}
+
 // Champs FSRS partagés par les files de révision (Fondations, Culture G)
 // (items FONDATIONS) — factorisé ici pour ne pas dupliquer l'appel au
 // scheduler entre les deux, sans pour autant unifier les deux types (l'un a
