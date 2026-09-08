@@ -52,6 +52,9 @@ func main() {
 	if err := ingest.SeedFeeds(ctx, pool, seedFeeds); err != nil {
 		log.Fatalf("seed feeds: %v", err)
 	}
+	if err := ingest.SeedArticleFeeds(ctx, pool, seedArticleFeeds); err != nil {
+		log.Fatalf("seed article feeds: %v", err)
+	}
 
 	interval := config.Duration("INGEST_INTERVAL", 6*time.Hour)
 	minRefetch := config.Duration("MIN_REFETCH_INTERVAL", 15*time.Minute)
@@ -59,6 +62,7 @@ func main() {
 
 	for {
 		runCycle(ctx, pool, rdb, minRefetch)
+		runArticleCycle(ctx, pool)
 
 		if runOnce {
 			return
@@ -135,6 +139,44 @@ func runCycle(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client, minRef
 		})
 	}
 	_ = g.Wait()
+}
+
+// runArticleCycle traite les flux d'articles (peu nombreux, un par grand
+// média — pas besoin du garde-fou Redis ni de la concurrence bornée de
+// runCycle : le cache conditionnel ETag suffit à rendre les passages
+// fréquents peu coûteux).
+func runArticleCycle(ctx context.Context, pool *pgxpool.Pool) {
+	feeds, err := ingest.LoadArticleFeeds(ctx, pool)
+	if err != nil {
+		log.Printf("load article feeds: %v", err)
+		return
+	}
+
+	rankSets := map[string]frequency.RankSet{}
+	for _, f := range feeds {
+		if _, ok := rankSets[f.Lang]; ok {
+			continue
+		}
+		set, err := frequency.LoadRankSet(ctx, pool, f.Lang, frequency.Thresholds["native"])
+		if err != nil {
+			log.Printf("load rank set for article lang %s: %v", f.Lang, err)
+			continue
+		}
+		rankSets[f.Lang] = set
+	}
+
+	for _, f := range feeds {
+		res, err := ingest.IngestArticleFeed(ctx, pool, f, rankSets[f.Lang])
+		if err != nil {
+			log.Printf("article feed %d (%s): %v", f.ID, f.SourceName, err)
+			continue
+		}
+		if res.NotModified {
+			log.Printf("article feed %d (%s): not modified", f.ID, f.SourceName)
+		} else {
+			log.Printf("article feed %d (%s): %d articles vus", f.ID, f.SourceName, res.ArticlesUpserted)
+		}
+	}
 }
 
 func mustParseRedisAddr(url string) string {

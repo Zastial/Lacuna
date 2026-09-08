@@ -46,3 +46,25 @@ type FrequencyWord struct {
 	Word string
 	Rank int
 }
+
+type ArticleFeed struct {
+	ID            int64
+	RSSURL        string
+	SourceName    string
+	Lang          string  // "es" | "it" | "fr"
+	Sport         *string // nil pour un flux généraliste
+	ETag          *string
+	LastModified  *string
+	LastFetchedAt *time.Time
+}
+
+type Article struct {
+	ID          int64
+	FeedID      int64
+	GUID        string
+	Title       string
+	Summary     string
+	URL         string
+	PublishedAt *time.Time
+	RareRatio   *float64
+}
