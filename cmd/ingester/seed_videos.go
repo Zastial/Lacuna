@@ -8,6 +8,9 @@ import "lacuna/internal/ingest"
 // direct : flux Atom accessible et 15 vidéos servies, sauf mention. La langue
 // a été contrôlée sur les titres réels, pas déduite du nom — @SkySport aurait
 // pu être la chaîne britannique, ses titres sont bien en italien.
+//
+// @FormulaPassion a été écartée de la catégorie auto : la chaîne existe mais
+// son flux Atom ne renvoie aucune entrée, elle n'aurait rien apporté.
 var videoChannels = []ingest.SeedVideoChannel{
 	// Italien
 	{YouTubeChannelID: "UCegEedDeryCYSVT7eBCm-RQ", Name: "Podcast Italiano", Lang: "it", Category: "langue"},
@@ -16,6 +19,8 @@ var videoChannels = []ingest.SeedVideoChannel{
 	{YouTubeChannelID: "UCAvNr5DMVncoJnJAotXOjOQ", Name: "Sky Sport", Lang: "it", Category: "sport"},
 	{YouTubeChannelID: "UCdufkvMrmyR1TMhDG8PhsJw", Name: "HDblog", Lang: "it", Category: "informatique"},
 	{YouTubeChannelID: "UCt9Q9JTC-ieDLvQOveX5mNw", Name: "Rolling Stone Italia", Lang: "it", Category: "musique"},
+	{YouTubeChannelID: "UCcKdVXVhcp-Qv0i8Ov6_K4Q", Name: "Motorbox", Lang: "it", Category: "auto"},
+	{YouTubeChannelID: "UC3u7URxSqN70zuJ5Yb_ryPg", Name: "Motor1 Italia", Lang: "it", Category: "auto"},
 
 	// Espagnol
 	{YouTubeChannelID: "UCouyFdE9-Lrjo3M_2idKq1A", Name: "Dreaming Spanish", Lang: "es", Category: "langue"},
@@ -24,4 +29,6 @@ var videoChannels = []ingest.SeedVideoChannel{
 	{YouTubeChannelID: "UCok_yhjwg4WSx3s_2Yh8ZjQ", Name: "Topes de Gama", Lang: "es", Category: "informatique"},
 	// LOS40 ne publie que 5 vidéos dans son flux, contre 15 ailleurs.
 	{YouTubeChannelID: "UChpDvNUea_vtz5L9XRvFl6w", Name: "LOS40", Lang: "es", Category: "musique"},
+	{YouTubeChannelID: "UCriizUOvtsM4mhLw1KGVzvQ", Name: "SoyMotor", Lang: "es", Category: "auto"},
+	{YouTubeChannelID: "UCfdj_0piEWBCfAueG4V32Ag", Name: "Diariomotor", Lang: "es", Category: "auto"},
 }

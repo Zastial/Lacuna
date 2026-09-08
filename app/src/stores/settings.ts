@@ -23,6 +23,7 @@ export const CATEGORIES = [
   { id: 'sport', label: 'Sport', icon: '⚽️' },
   { id: 'musique', label: 'Musique', icon: '🎧' },
   { id: 'informatique', label: 'Informatique', icon: '💻' },
+  { id: 'auto', label: 'Sport automobile', icon: '🏎️' },
 ] as const
 
 const KEY = 'lacuna.settings'
@@ -60,7 +61,7 @@ const DEFAULTS: Omit<SettingsState, 'loaded'> = {
   onboarded: false,
   // Par défaut tout est coché : sans choix, mieux vaut trop de contenu que
   // pas de contenu du tout. L'onboarding remplace ça par un vrai choix.
-  categories: ['langue', 'sport', 'musique', 'informatique'],
+  categories: ['langue', 'sport', 'musique', 'informatique', 'auto'],
   targetLang: 'it',
   sports: ['football'],
   notifySport: true,
