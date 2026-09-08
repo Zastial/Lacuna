@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { Browser } from '@capacitor/browser'
 import { useArticlesStore } from '../stores/articles'
 import { useSettingsStore } from '../stores/settings'
+import { ERROR_TEXT } from '../services/toast'
 import { buildCloze } from '../services/frequency'
 import type { ApiArticle } from '../types/models'
 
@@ -62,7 +63,10 @@ async function openFull(article: ApiArticle): Promise<void> {
       </p>
 
       <p v-if="articles.loading" class="hint">Chargement…</p>
-      <p v-else-if="articles.error" class="error">{{ articles.error }}</p>
+      <p v-else-if="articles.error" class="error">
+        {{ ERROR_TEXT }}
+        <button class="inline-retry" @click="articles.fetch()">Réessayer</button>
+      </p>
       <p v-else-if="articles.articles.length === 0" class="hint">Aucun article pour l'instant.</p>
 
       <ul>
@@ -177,6 +181,16 @@ header {
 }
 .error {
   color: var(--coral-ink);
+}
+.inline-retry {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--coral-ink);
+  font-weight: 600;
+  cursor: pointer;
 }
 ul {
   list-style: none;

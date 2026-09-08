@@ -7,6 +7,7 @@ import FondationsView from './views/FondationsView.vue'
 import CultureGView from './views/CultureGView.vue'
 import ArticlesView from './views/ArticlesView.vue'
 import SettingsView from './views/SettingsView.vue'
+import ErrorToast from './components/ErrorToast.vue'
 import { useRevueStore } from './stores/revue'
 import { useFondationsStore } from './stores/fondations'
 import { useCultureGStore } from './stores/cultureg'
@@ -80,4 +81,9 @@ function onBack(): void {
       @settings="screen = 'settings'"
     />
   </Transition>
+
+  <!-- Hors de la Transition : la bannière doit survivre au changement
+       d'écran, sinon une erreur déclenchée par une navigation disparaîtrait
+       avec l'écran qui l'a provoquée. -->
+  <ErrorToast />
 </template>

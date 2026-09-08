@@ -4,6 +4,7 @@ import { useEpisodesStore } from '../stores/episodes'
 import { useRevueStore } from '../stores/revue'
 import { useFondationsStore } from '../stores/fondations'
 import { useCultureGStore } from '../stores/cultureg'
+import { ERROR_TEXT, reportError } from '../services/toast'
 import type { ApiEpisode, LocalEpisode } from '../types/models'
 
 const episodes = useEpisodesStore()
@@ -46,8 +47,16 @@ function onOpenDownloaded(local: LocalEpisode): void {
   emit('open', local)
 }
 
+// Le téléchargement est ce qui échoue le plus souvent — réseau coupé dans
+// le métro, flux qui répond mal. La reprise relance l'action complète, y
+// compris l'ouverture de l'épisode une fois le fichier là.
 async function onOpenAfterDownload(remote: ApiEpisode): Promise<void> {
-  await onDownload(remote)
+  try {
+    await onDownload(remote)
+  } catch (err) {
+    reportError(err, () => onOpenAfterDownload(remote))
+    return
+  }
   const local = episodes.downloaded.find((e) => e.id === remote.id)
   if (local) emit('open', local)
 }
@@ -56,8 +65,18 @@ async function onDelete(ep: LocalEpisode, event: Event): Promise<void> {
   event.stopPropagation()
   const ok = window.confirm(`Supprimer « ${ep.title} » ?\nLes captures et la progression de révision liées seront perdues.`)
   if (!ok) return
-  await episodes.remove(ep.id)
-  await revue.refreshDueCount()
+  await removeEpisode(ep)
+}
+
+// La suppression est rejouable telle quelle : la confirmation a déjà été
+// donnée, et supprimer deux fois le même épisode est sans effet.
+async function removeEpisode(ep: LocalEpisode): Promise<void> {
+  try {
+    await episodes.remove(ep.id)
+    await revue.refreshDueCount()
+  } catch (err) {
+    reportError(err, () => removeEpisode(ep))
+  }
 }
 </script>
 
@@ -102,7 +121,10 @@ async function onDelete(ep: LocalEpisode, event: Event): Promise<void> {
     <section>
       <p class="label section-label">Disponibles</p>
       <p v-if="episodes.loadingRemote" class="hint">Chargement…</p>
-      <p v-else-if="episodes.error" class="error">{{ episodes.error }}</p>
+      <p v-else-if="episodes.error" class="error">
+        {{ ERROR_TEXT }}
+        <button class="inline-retry" @click="episodes.fetchRemote()">Réessayer</button>
+      </p>
       <ul>
         <li v-for="ep in visibleRemote" :key="ep.id">
           <template v-if="isDownloaded(ep)">
@@ -282,5 +304,15 @@ ul {
 }
 .error {
   color: var(--coral-ink);
+}
+.inline-retry {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--coral-ink);
+  font-weight: 600;
+  cursor: pointer;
 }
 </style>
