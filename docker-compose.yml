@@ -33,6 +33,9 @@ services:
       DATABASE_URL: postgres://lacuna:lacuna@postgres:5432/lacuna?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       API_ADDR: ":8080"
+      # Lue depuis .env à la racine, jamais écrite ici : ce fichier est
+      # versionné, .env ne l'est pas.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "8080:8080"
     depends_on:

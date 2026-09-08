@@ -7,3 +7,9 @@
 
 # OS
 .DS_Store
+
+# Secrets : le dépôt est public. Une clé d'API commitée ici est une clé
+# publiée, et la retirer ensuite ne la dépublie pas — il faut la révoquer.
+.env
+.env.*
+!.env.example
