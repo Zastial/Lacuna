@@ -24,6 +24,7 @@ export const CATEGORIES = [
   { id: 'musique', label: 'Musique', icon: '🎧' },
   { id: 'informatique', label: 'Informatique', icon: '💻' },
   { id: 'auto', label: 'Sport automobile', icon: '🏎️' },
+  { id: 'series', label: 'Séries & animés', icon: '🎬' },
 ] as const
 
 const KEY = 'lacuna.settings'

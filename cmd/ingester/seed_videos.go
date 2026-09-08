@@ -19,7 +19,13 @@ import "lacuna/internal/ingest"
 //
 // Écartées, pour mémoire : @FormulaPassion (chaîne existante mais flux sans
 // aucune entrée), @Quattroruote (2 vidéos), @LOS40 (43 vues médianes,
-// dernière vidéo il y a plus de douze ans).
+// dernière vidéo il y a plus de douze ans), @Crunchyroll (active et
+// populaire, mais uniquement en anglais — la règle de langue prime),
+// @SelectaVision (dessin animé jeunesse plutôt qu'animé, ~1 000 vues).
+//
+// Les bandes-annonces d'animés arrivent donc par Netflix et Prime Video, qui
+// en publient des doublages en italien et en espagnol, faute d'une chaîne
+// Crunchyroll localisée.
 var videoChannels = []ingest.SeedVideoChannel{
 	// Italien
 	{YouTubeChannelID: "UCegEedDeryCYSVT7eBCm-RQ", Name: "Podcast Italiano", Lang: "it", Category: "langue"},       // ~10 400 vues
@@ -30,6 +36,9 @@ var videoChannels = []ingest.SeedVideoChannel{
 	{YouTubeChannelID: "UCt9Q9JTC-ieDLvQOveX5mNw", Name: "Rolling Stone Italia", Lang: "it", Category: "musique"},  // ~1 700, maillon faible
 	{YouTubeChannelID: "UCcKdVXVhcp-Qv0i8Ov6_K4Q", Name: "Motorbox", Lang: "it", Category: "auto"},                 // ~3 900
 	{YouTubeChannelID: "UC3u7URxSqN70zuJ5Yb_ryPg", Name: "Motor1 Italia", Lang: "it", Category: "auto"},            // ~18 800
+	{YouTubeChannelID: "UCAaBGiU1C74gFgRcJTivj4w", Name: "Prime Video Italia", Lang: "it", Category: "series"},     // ~9 000
+	{YouTubeChannelID: "UCi_T2R1AzOCun4-PI4Or2ng", Name: "Netflix Italia", Lang: "it", Category: "series"},         // ~5 600
+	{YouTubeChannelID: "UCF6y68V96phFE4BJPIlAu0g", Name: "Disney+ Italia", Lang: "it", Category: "series"},         // ~700
 
 	// Espagnol
 	{YouTubeChannelID: "UCouyFdE9-Lrjo3M_2idKq1A", Name: "Dreaming Spanish", Lang: "es", Category: "langue"},    // ~15 800
@@ -40,7 +49,10 @@ var videoChannels = []ingest.SeedVideoChannel{
 	{YouTubeChannelID: "UCok_yhjwg4WSx3s_2Yh8ZjQ", Name: "Topes de Gama", Lang: "es", Category: "informatique"}, // ~22 000
 	{YouTubeChannelID: "UCmS75G-98QihSusY7NfCZtw", Name: "Bizarrap", Lang: "es", Category: "musique"},           // ~51 650 000
 	// Journaliste F1 : l'analyse d'un passionné plutôt qu'une dépêche.
-	{YouTubeChannelID: "UCklUGqDiqiIak4PWh-qbhxQ", Name: "Albert Fábrega", Lang: "es", Category: "auto"}, // ~94 800
-	{YouTubeChannelID: "UCriizUOvtsM4mhLw1KGVzvQ", Name: "SoyMotor", Lang: "es", Category: "auto"},       // ~38 700
-	{YouTubeChannelID: "UCfdj_0piEWBCfAueG4V32Ag", Name: "Diariomotor", Lang: "es", Category: "auto"},    // ~14 100
+	{YouTubeChannelID: "UCklUGqDiqiIak4PWh-qbhxQ", Name: "Albert Fábrega", Lang: "es", Category: "auto"},       // ~94 800
+	{YouTubeChannelID: "UCriizUOvtsM4mhLw1KGVzvQ", Name: "SoyMotor", Lang: "es", Category: "auto"},             // ~38 700
+	{YouTubeChannelID: "UCfdj_0piEWBCfAueG4V32Ag", Name: "Diariomotor", Lang: "es", Category: "auto"},          // ~14 100
+	{YouTubeChannelID: "UC1JAfFo5AJSlXITRAGguAOg", Name: "Disney+ España", Lang: "es", Category: "series"},     // ~5 700
+	{YouTubeChannelID: "UCMjBY_FJmMLAPUI0Dxntbsw", Name: "Prime Video España", Lang: "es", Category: "series"}, // ~5 200
+	{YouTubeChannelID: "UCT2UUebPuLke_BShrDh_YEA", Name: "Netflix España", Lang: "es", Category: "series"},     // ~4 000
 }
