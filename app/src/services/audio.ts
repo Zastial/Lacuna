@@ -100,6 +100,25 @@ export class EpisodePlayer {
     this.audio.addEventListener('timeupdate', () => cb(this.currentTimeMs))
   }
 
+  // playSegment rejoue précisément [startMs, endMs] puis s'arrête — le
+  // replay de segment demandé en mode REVUE (§7), par opposition à la
+  // lecture continue du mode TRANSPORT.
+  playSegment(startMs: number, endMs: number): void {
+    this.currentTimeMs = startMs
+    this.play()
+    const stopAtEnd = (): void => {
+      if (this.currentTimeMs >= endMs) {
+        this.audio.removeEventListener('timeupdate', stopAtEnd)
+        // pause() est différé hors de la pile d'appel du handler
+        // 'timeupdate' lui-même : l'appeler de façon synchrone ici a déjà
+        // gelé la réception des touches sur toute la page en simulateur
+        // (voir le même contournement pour le checkpoint TRANSPORT).
+        setTimeout(() => this.pause(), 0)
+      }
+    }
+    this.audio.addEventListener('timeupdate', stopAtEnd)
+  }
+
   onEnded(cb: () => void): void {
     this.audio.addEventListener('ended', cb)
   }

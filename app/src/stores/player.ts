@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 
 import { EpisodePlayer } from '../services/audio'
-import { findSegmentAt, insertCapture } from '../db/repository'
+import { findSegmentAt, getReviewState, insertCapture, upsertReviewState } from '../db/repository'
+import { newReviewState } from '../services/srs'
+import { pushLocalChanges } from '../services/sync'
+import { useRevueStore } from './revue'
 import type { CaptureKind, LocalEpisode } from '../types/models'
 
 // §7 TRANSPORT : checkpoint toutes les 90s (configurable mais jamais
@@ -114,6 +117,17 @@ export const usePlayerStore = defineStore('player', {
       })
       this.captureCount++
       this.lastCaptureAt = Date.now()
+
+      // Un segment capturé pour la première fois entre en révision, dû dès
+      // ce soir (§7). Une recapture d'un segment déjà en révision ne
+      // réinitialise pas sa progression FSRS.
+      const existing = await getReviewState(segment.id)
+      if (!existing) {
+        await upsertReviewState(newReviewState(segment.id))
+        void useRevueStore().refreshDueCount()
+      }
+
+      void pushLocalChanges() // best-effort, ne bloque jamais la capture
     },
   },
 })

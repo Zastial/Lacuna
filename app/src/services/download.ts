@@ -9,7 +9,11 @@ import type { ApiEpisode, LocalEpisode, LocalSegment } from '../types/models'
 // segments alignés (SQLite) — §8 Phase 2 : "audio -> Filesystem, segments ->
 // SQLite". Le MP3 est récupéré directement depuis l'hébergeur d'origine
 // (§5 : le backend ne proxifie jamais l'audio), le reste vient de l'API.
-export async function downloadEpisode(episode: ApiEpisode, onProgress?: (ratio: number) => void): Promise<LocalEpisode> {
+export async function downloadEpisode(
+  episode: ApiEpisode,
+  feed: { lang: string; level: string },
+  onProgress?: (ratio: number) => void,
+): Promise<LocalEpisode> {
   await Filesystem.mkdir({ path: 'episodes', directory: Directory.Data, recursive: true }).catch(() => {
     // dossier déjà existant : pas une erreur
   })
@@ -45,6 +49,8 @@ export async function downloadEpisode(episode: ApiEpisode, onProgress?: (ratio: 
     title: fresh.title,
     audioRelativePath: relativePath,
     durationS: fresh.duration_s,
+    lang: feed.lang,
+    level: feed.level,
   }
   await saveEpisode(localEpisode)
 
