@@ -1,9 +1,10 @@
 # Lacuna
 
-> *lacuna* — le trou dans la compréhension. Et l'unité de base du produit.
+> *lacuna* — le trou dans la compréhension. Cognat dans les deux langues
+> cibles : *lacuna* en italien, *laguna* en espagnol.
 
-Une app mobile pour apprendre l'italien et l'espagnol, construite autour d'une
-idée simple : **ce que je ne comprends pas devient mon programme de révision.**
+Une app mobile pour apprendre l'italien et l'espagnol à partir de ce qu'on
+avait déjà envie de regarder.
 
 ---
 
@@ -14,9 +15,10 @@ d'application ne parlent de rien, et le contenu « authentique » proposé est
 rarement celui qu'on aurait regardé de toute façon.
 
 Lacuna part de l'inverse : tu dis ce qui t'intéresse — sport, musique,
-informatique — et l'app va chercher des vidéos récentes sur ces sujets, en
-italien ou en espagnol. À côté, des exercices écrits à la main et une
-révision espacée qui te ramène ce que tu es sur le point d'oublier.
+informatique, sport automobile, ou simplement apprendre la langue — et l'app
+va chercher des vidéos récentes sur ces sujets, en italien ou en espagnol.
+À côté, des exercices écrits à la main et une révision espacée qui te ramène
+ce que tu es sur le point d'oublier.
 
 Anki a un excellent SRS mais tout l'encodage est manuel. LingQ est centré
 texte. Duolingo produit des phrases hors contexte. Pimsleur est un programme
@@ -44,8 +46,20 @@ tourne **sur l'appareil**, hors ligne.
 progression et la révision espacée fonctionnent sans réseau. Seules les
 vidéos et les articles, par nature, demandent une connexion.
 
-**Jamais d'écoute passive.** Toute fonctionnalité qui laisse écouter longtemps
-sans rien faire est un anti-pattern ici. Le rappel actif est partout.
+**Le rappel actif dans les exercices, pas dans le fil.** Le cadrage d'origine
+bannissait toute consommation passive. Ce n'est plus tenable depuis que le
+contenu est de la vidéo : regarder YouTube est passif, et le prétendre
+autrement serait mentir sur ce que fait l'app. La ligne a donc été déplacée
+plutôt qu'abandonnée — le fil vidéo est de l'input, assumé comme tel ;
+Fondations, Culture G et la révision espacée sont du rappel actif, sans
+exception.
+
+**Aucune source ne monopolise le fil.** Trier par date seule laissait la
+chaîne la plus prolifique remplir l'écran : sur 24 vidéos espagnoles, une
+seule chaîne en occupait 15, et cocher un centre d'intérêt de plus ne
+changeait qu'une ligne enfouie. Les sources alternent donc — la plus récente
+de chacune d'abord, puis la deuxième de chacune. Un réglage qu'on change doit
+se voir.
 
 ## Ce qu'il y a dedans
 
@@ -57,6 +71,11 @@ sans rien faire est un anti-pattern ici. Le rappel actif est partout.
 | **Articles** | Presse quotidienne (ANSA, la Repubblica, BBC Mundo, Infobae) avec les mots rares mis en évidence |
 | **Sport** | Les titres de L'Équipe, filtrés sur tes sports, à redire en langue cible |
 | **Onboarding** | Au premier lancement : langue et centres d'intérêt |
+| **Réglages** | Langue, centres d'intérêt, sports, thème clair/sombre, notifications |
+
+Les vidéos viennent de 15 chaînes suivies par leur flux public, réparties en
+cinq centres d'intérêt (langue, sport, musique, informatique, sport
+automobile) et deux langues.
 
 Et une notification quotidienne bilingue : la phrase du jour, le rappel de
 révision, et — sur appareil réel — un titre sportif traduit hors ligne.
@@ -74,7 +93,7 @@ au passage.
 
 ```
 cmd/ingester      Chaînes YouTube, flux d'articles, listes de fréquence
-internal/         Parsing de flux, alignement, API JSON, sync
+internal/         Parsing RSS et Atom, ingestion, API JSON, sync
 migrations/       Schéma Postgres (golang-migrate, embarqué dans le binaire)
 app/              Client Vue 3 + Capacitor (iOS)
   src/data/       Contenu écrit à la main : scénarios, verbes, culture G
@@ -85,8 +104,8 @@ app/              Client Vue 3 + Capacitor (iOS)
 
 Le backend est en Go (Postgres + Redis, `docker compose up`). Le client est en
 Vue 3 / TypeScript, empaqueté par Capacitor. La répétition espacée utilise
-FSRS via `ts-fsrs`, sur trois files indépendantes (segments audio,
-conjugaison, culture G).
+FSRS via `ts-fsrs`, sur deux files indépendantes : conjugaison (Fondations)
+et culture générale.
 
 ## Démarrer
 
@@ -114,6 +133,11 @@ Pour l'app iOS : `npm run build && npx cap sync ios`, puis ouvrir
   toute révision dérivée d'une vidéo.
 - **Les flux de chaîne YouTube ne demandent aucune clé d'API** et servent les
   15 dernières vidéos. C'est ce qui rend le mode vidéo gratuit et sans quota.
+- **Une chaîne peut exister et servir un flux vide.** @FormulaPassion répond
+  HTTP 200 sans aucune entrée, comme les chemins `/Volley/` et `/Volleyball/`
+  chez L'Équipe. Un code 200 ne prouve rien : toute source ajoutée est
+  vérifiée sur son contenu réel, et sa langue contrôlée sur les titres plutôt
+  que déduite du nom.
 - **UniMorph ne peut pas servir de source de conjugaison** : le dataset
   italien n'a ni `essere`, ni `avere`, ni `potere`, et omet le présent
   irrégulier des verbes courants. Il ne sert que de vérificateur.
