@@ -1,39 +1,6 @@
 // Miroir des types renvoyés par l'API backend (voir internal/apihttp côté Go)
 // et des tables locales SQLite (§6.2 du plan).
 
-export interface ApiFeed {
-  id: number
-  rss_url: string
-  title: string
-  lang: string
-  level: string
-  has_transcripts: boolean
-}
-
-export interface ApiEpisode {
-  id: number
-  feed_id: number
-  title: string
-  audio_url: string
-  duration_s: number | null
-  published_at: string | null
-  segments_ready: boolean
-}
-
-export interface ApiSegment {
-  idx: number
-  start_ms: number
-  end_ms: number
-  text: string
-  word_count: number
-  rare_ratio: number | null
-}
-
-export interface ApiEpisodeSegments {
-  episode: ApiEpisode
-  segments: ApiSegment[]
-}
-
 // Mode Articles : contenu texte du jour, tiré de vrais flux RSS de médias
 // (§ pas d'IA, pas de contenu généré — le résumé est celui publié par la
 // source). `summary` est l'extrait RSS, pas l'article complet ; `url` pointe
@@ -49,70 +16,7 @@ export interface ApiArticle {
   rare_ratio: number | null
 }
 
-// Épisode téléchargé localement (table `episode` miroir + chemin fichier local).
-//
-// audioRelativePath est un chemin RELATIF (ex: "episodes/episode-9.mp3"),
-// résolu en URI absolue à la lecture via Filesystem.getUri(). L'UUID du
-// conteneur sandbox iOS peut changer entre deux lancements (réinstallation
-// via Xcode, restauration...) — un chemin absolu persisté en base casserait
-// tous les épisodes déjà téléchargés après le redéploiement hebdomadaire
-// prévu par le plan (§3.1).
-export interface LocalEpisode {
-  id: number
-  feedId: number
-  title: string
-  audioRelativePath: string
-  durationS: number | null
-  lang: string
-  level: string
-}
-
-export interface LocalSegment {
-  id: number
-  episodeId: number
-  idx: number
-  startMs: number
-  endMs: number
-  text: string
-}
-
 export type CaptureKind = 'not_understood' | 'unknown_word' | 'liked'
-
-export interface Capture {
-  id: string
-  segmentId: number
-  episodeId: number
-  capturedAt: number
-  kind: CaptureKind
-  note: string | null
-  synced: boolean
-}
-
-// État FSRS d'un segment en révision (§6.2, §7 mode REVUE). Une ligne par
-// segment déjà capturé au moins une fois.
-export interface ReviewState {
-  segmentId: number
-  dueAt: number // epoch ms
-  stability: number
-  difficulty: number
-  reps: number
-  lapses: number
-  lastGrade: number | null // valeur ts-fsrs Rating (1=Again, 3=Good)
-  lastReview: number | null // epoch ms
-  synced: boolean
-}
-
-// Un segment dû pour révision, avec le contexte nécessaire à l'affichage
-// (§7 : audio rejouable, texte, segment précédent/suivant).
-export interface DueReviewItem {
-  segment: LocalSegment
-  reviewState: ReviewState
-  episodeId: number
-  episodeTitle: string
-  audioRelativePath: string
-  lang: string
-  level: string
-}
 
 // --- Mode FONDATIONS : scénarios situationnels pour construire le
 // vocabulaire de base avant que l'écoute seule (TRANSPORT/REVUE) ne soit

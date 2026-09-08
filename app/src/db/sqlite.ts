@@ -2,57 +2,11 @@ import { CapacitorSQLite, SQLiteConnection, type SQLiteDBConnection } from '@cap
 
 const DB_NAME = 'lacuna'
 
-// Miroir local (§6.2 du plan) : episode/segment sont un cache lecture seule
-// du contenu téléchargé, capture et review_state sont écrites par l'app.
+// Base locale : progression et files de révision espacée. Tout le contenu
+// (vidéos, articles) vient du réseau et n'est pas mis en cache ici.
 const SCHEMA = `
-CREATE TABLE IF NOT EXISTS episode (
-  id INTEGER PRIMARY KEY,
-  feed_id INTEGER NOT NULL,
-  title TEXT NOT NULL,
-  audio_relative_path TEXT NOT NULL,
-  duration_s INTEGER,
-  lang TEXT NOT NULL DEFAULT '',
-  level TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS segment (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  episode_id INTEGER NOT NULL,
-  idx INTEGER NOT NULL,
-  start_ms INTEGER NOT NULL,
-  end_ms INTEGER NOT NULL,
-  text TEXT NOT NULL,
-  UNIQUE(episode_id, idx)
-);
-CREATE INDEX IF NOT EXISTS segment_episode_start ON segment(episode_id, start_ms);
-
-CREATE TABLE IF NOT EXISTS capture (
-  id TEXT PRIMARY KEY,
-  segment_id INTEGER NOT NULL,
-  episode_id INTEGER NOT NULL,
-  captured_at INTEGER NOT NULL,
-  kind TEXT NOT NULL,
-  note TEXT,
-  synced INTEGER NOT NULL DEFAULT 0
-);
-
--- Un segment capturé au moins une fois entre en révision (§7 mode REVUE).
-CREATE TABLE IF NOT EXISTS review_state (
-  segment_id  INTEGER PRIMARY KEY,
-  due_at      INTEGER NOT NULL,
-  stability   REAL NOT NULL,
-  difficulty  REAL NOT NULL,
-  reps        INTEGER NOT NULL DEFAULT 0,
-  lapses      INTEGER NOT NULL DEFAULT 0,
-  last_grade  INTEGER,
-  last_review INTEGER,
-  synced      INTEGER NOT NULL DEFAULT 0
-);
-CREATE INDEX IF NOT EXISTS review_state_due ON review_state(due_at);
-
--- Révision espacée pour le mode FONDATIONS (§ vocabulaire/conjugaison) :
--- même structure que review_state mais itemId n'est pas un segment audio,
--- c'est l'id stable d'un ConjugItem ou "vocab:<lang>:<target>".
+-- Révision espacée du mode Fondations : item_id est l'id stable d'un
+-- ConjugItem, écrit à la main ou généré.
 CREATE TABLE IF NOT EXISTS vocab_review_state (
   item_id     TEXT PRIMARY KEY,
   lang        TEXT NOT NULL,
@@ -124,18 +78,15 @@ export async function getDB(): Promise<SQLiteDBConnection> {
   return dbPromise
 }
 
-// migrate applique les changements de schéma sur une base déjà créée par une
-// version antérieure de l'app (pas de framework de migration : le schéma est
-// encore petit, CREATE TABLE IF NOT EXISTS + ALTER TABLE best-effort suffit).
+// migrate rattrape les bases créées par une version antérieure. Ici : le
+// mode audio a été retiré, et ses tables locales n'ont plus ni producteur ni
+// lecteur. Les laisser garderait des captures orphelines et de l'audio
+// référencé dans une base qu'on croit propre.
+//
+// L'ordre part des feuilles : review_state et capture référencent segment,
+// qui référence episode.
 async function migrate(db: SQLiteDBConnection): Promise<void> {
-  await addColumnIfMissing(db, 'episode', 'lang', "TEXT NOT NULL DEFAULT ''")
-  await addColumnIfMissing(db, 'episode', 'level', "TEXT NOT NULL DEFAULT ''")
-}
-
-async function addColumnIfMissing(db: SQLiteDBConnection, table: string, column: string, definition: string): Promise<void> {
-  const res = await db.query(`PRAGMA table_info(${table})`)
-  const exists = (res.values ?? []).some((row) => (row as { name?: string }).name === column)
-  if (!exists) {
-    await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  for (const table of ['review_state', 'capture', 'segment', 'episode']) {
+    await db.execute(`DROP TABLE IF EXISTS ${table}`)
   }
 }

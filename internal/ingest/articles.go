@@ -13,9 +13,19 @@ import (
 	"lacuna/internal/rssfeed"
 )
 
-// maxArticlesPerFeed borne le nombre d'articles traités par passage — même
-// raisonnement que maxItemsPerFeed pour les podcasts (§ ingest.go).
+// maxArticlesPerFeed borne le nombre d'articles traités par passage : les
+// flux servent souvent bien plus que ce qu'on affiche, inutile de tout
+// écrire en base à chaque cycle.
 const maxArticlesPerFeed = 20
+
+// nullIfEmpty rend NULL plutôt qu'une chaîne vide : un ETag absent doit se
+// distinguer d'un ETag vide au prochain GET conditionnel.
+func nullIfEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
 
 type SeedArticleFeed struct {
 	RSSURL     string

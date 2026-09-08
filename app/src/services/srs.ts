@@ -3,13 +3,13 @@
 // Notation binaire "j'ai su / j'ai pas su" (§3.3 — modèle Anki, validé
 // pédagogiquement dans le plan), mappée sur deux des quatre grades FSRS.
 import { type Card, createEmptyCard, fsrs, generatorParameters, Rating, State } from 'ts-fsrs'
-import type { ReviewState, VocabReviewState } from '../types/models'
+import type { VocabReviewState } from '../types/models'
 
 const scheduler = fsrs(generatorParameters({ enable_fuzz: true }))
 
 export type Grade = 'again' | 'good'
 
-// Champs FSRS partagés par ReviewState (segments audio) et VocabReviewState
+// Champs FSRS partagés par les files de révision (Fondations, Culture G)
 // (items FONDATIONS) — factorisé ici pour ne pas dupliquer l'appel au
 // scheduler entre les deux, sans pour autant unifier les deux types (l'un a
 // un segmentId numérique, l'autre un itemId + lang, pas la même clé).
@@ -67,19 +67,6 @@ function toCard(fields: FsrsFields): Card {
   }
 }
 
-// newReviewState initialise l'état d'un segment fraîchement capturé : dû
-// immédiatement, pour apparaître dans la file de révision du soir même.
-export function newReviewState(segmentId: number): ReviewState {
-  return { segmentId, ...newFsrsFields(), synced: false }
-}
-
-export function gradeReviewState(state: ReviewState, grade: Grade): ReviewState {
-  return { segmentId: state.segmentId, ...gradeFsrsFields(state, grade), synced: false }
-}
-
-// Même logique pour le vocabulaire/conjugaison du mode FONDATIONS, dû
-// immédiatement dès l'introduction d'un item (apparaît dans le prochain
-// entraînement mêlé plutôt que d'attendre un intervalle initial).
 export function newVocabReviewState(itemId: string, lang: string): VocabReviewState {
   return { itemId, lang, ...newFsrsFields(), synced: false }
 }

@@ -12,7 +12,6 @@ import {
 import { generateDrills, resolveGeneratedItem, verbOfItemId, verbsForLang } from '../services/drillGenerator'
 import { shuffle } from '../services/shuffle'
 import { gradeVocabReviewState, newVocabReviewState, type Grade } from '../services/srs'
-import { pushLocalChanges } from '../services/sync'
 import type { ConjugItem, Scenario, ScenarioMCQ } from '../types/models'
 
 // Taille d'une série d'entraînement rapide.
@@ -184,7 +183,6 @@ export const useFondationsStore = defineStore('fondations', {
       const existing = await getVocabReviewState(item.id)
       const updated = existing ? gradeVocabReviewState(existing, grade) : gradeVocabReviewState(newVocabReviewState(item.id, this.lang), grade)
       await upsertVocabReviewState(updated)
-      void pushLocalChanges()
       await this.refreshVerbMastery()
     },
 

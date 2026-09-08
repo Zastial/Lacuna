@@ -1,0 +1,3 @@
+-- Volontairement vide. Les définitions de tables restent dans 0001 et 0002,
+-- mais le contenu ingéré, lui, est perdu : un rollback ne le ramènerait pas.
+-- Ce fichier existe pour ne pas interrompre la chaîne de migrations.

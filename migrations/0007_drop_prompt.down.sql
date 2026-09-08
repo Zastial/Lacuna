@@ -1,0 +1,2 @@
+-- La définition d'origine reste dans 0001 ; ce down est vide comme celui de
+-- 0006, pour ne pas interrompre la chaîne de migrations.
