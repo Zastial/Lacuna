@@ -4,6 +4,7 @@
 package rssfeed
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
 	"fmt"
@@ -29,6 +30,8 @@ type Channel struct {
 type Item struct {
 	Title       string       `xml:"title"`
 	GUID        string       `xml:"guid"`
+	Link        string       `xml:"link"`
+	Description string       `xml:"description"`
 	Enclosure   Enclosure    `xml:"enclosure"`
 	Duration    string       `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd duration"`
 	PubDate     string       `xml:"pubDate"`
@@ -174,9 +177,19 @@ func retryAfter(header string) (time.Duration, bool) {
 	return 0, false
 }
 
+// Parse lit un flux RSS en mode tolérant. Les rédactions publient
+// régulièrement du XML légèrement invalide — L'Équipe émet par exemple
+// "&box" sans point-virgule, ce que le décodeur strict refuse, rendant tout
+// le flux inexploitable pour une entité mal formée dans un seul titre.
+// Strict=false accepte ces entités inconnues, et l'AutoClose/CharsetReader
+// par défaut suffit pour le reste.
 func Parse(body []byte) (*Feed, error) {
+	decoder := xml.NewDecoder(bytes.NewReader(body))
+	decoder.Strict = false
+	decoder.Entity = xml.HTMLEntity
+
 	var feed Feed
-	if err := xml.Unmarshal(body, &feed); err != nil {
+	if err := decoder.Decode(&feed); err != nil {
 		return nil, fmt.Errorf("parse rss xml: %w", err)
 	}
 	return &feed, nil

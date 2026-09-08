@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,6 +18,10 @@ func NewMux(pool *pgxpool.Pool) http.Handler {
 	mux.HandleFunc("GET /feeds", listFeeds(pool))
 	mux.HandleFunc("GET /episodes", listEpisodes(pool))
 	mux.HandleFunc("GET /episodes/{id}/segments", episodeSegments(pool))
+	mux.HandleFunc("GET /articles", listArticles(pool))
+	mux.HandleFunc("POST /sync/captures", syncCaptures(pool))
+	mux.HandleFunc("POST /sync/review_state", syncReviewState(pool))
+	mux.HandleFunc("GET /sync/state", syncState(pool))
 	mux.HandleFunc("GET /healthz", healthz(pool))
 	return withCORS(mux)
 }
@@ -28,7 +33,7 @@ func NewMux(pool *pgxpool.Pool) http.Handler {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -182,6 +187,83 @@ func episodeSegments(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		writeJSON(w, http.StatusOK, episodeSegmentsJSON{Episode: episode, Segments: segments})
+	}
+}
+
+type articleJSON struct {
+	ID          int64    `json:"id"`
+	SourceName  string   `json:"source_name"`
+	Lang        string   `json:"lang"`
+	Sport       *string  `json:"sport"`
+	Title       string   `json:"title"`
+	Summary     string   `json:"summary"`
+	URL         string   `json:"url"`
+	PublishedAt *string  `json:"published_at"`
+	RareRatio   *float64 `json:"rare_ratio"`
+}
+
+const defaultArticleLimit = 20
+const maxArticleLimit = 50
+
+// listArticles filtre par lang (§ mode Articles : "chaque jour, quelques
+// articles récents") et renvoie les plus récents tous flux confondus pour
+// cette langue, limité par `limit` (défaut 20, plafond 50).
+func listArticles(pool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		lang := r.URL.Query().Get("lang")
+		// `sports` accepte une liste séparée par des virgules : l'app envoie
+		// les préférences de l'utilisateur d'un coup plutôt qu'un appel par
+		// sport.
+		sports := []string{}
+		if raw := r.URL.Query().Get("sports"); raw != "" {
+			for _, s := range strings.Split(raw, ",") {
+				if s = strings.TrimSpace(s); s != "" {
+					sports = append(sports, s)
+				}
+			}
+		}
+
+		limit := defaultArticleLimit
+		if raw := r.URL.Query().Get("limit"); raw != "" {
+			if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+				limit = n
+			}
+		}
+		if limit > maxArticleLimit {
+			limit = maxArticleLimit
+		}
+
+		rows, err := pool.Query(r.Context(), `
+			SELECT a.id, f.source_name, f.lang, f.sport, a.title, a.summary, a.url, a.published_at, a.rare_ratio
+			FROM article a
+			JOIN article_feed f ON f.id = a.feed_id
+			WHERE ($1 = '' OR f.lang = $1)
+			  AND (cardinality($2::text[]) = 0 OR f.sport = ANY($2::text[]))
+			ORDER BY a.published_at DESC NULLS LAST, a.id DESC
+			LIMIT $3`,
+			lang, sports, limit)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		articles := []articleJSON{}
+		for rows.Next() {
+			var a articleJSON
+			var publishedAt *time.Time
+			if err := rows.Scan(&a.ID, &a.SourceName, &a.Lang, &a.Sport, &a.Title, &a.Summary, &a.URL, &publishedAt, &a.RareRatio); err != nil {
+				writeError(w, http.StatusInternalServerError, err)
+				return
+			}
+			a.PublishedAt = formatTime(publishedAt)
+			articles = append(articles, a)
+		}
+		if err := rows.Err(); err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, articles)
 	}
 }
 
