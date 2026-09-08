@@ -75,7 +75,7 @@ async function openFull(article: ApiArticle): Promise<void> {
         est de le redire en {{ settings.primaryLang === 'es' ? 'espagnol' : 'italien' }}.
       </p>
 
-      <p v-if="articles.loading" class="hint">Chargement…</p>
+      <p v-if="articles.loading" class="loading">Chargement…</p>
       <p v-else-if="articles.error" class="error">
         {{ ERROR_TEXT }}
         <button class="inline-retry" @click="articles.fetch()">Réessayer</button>

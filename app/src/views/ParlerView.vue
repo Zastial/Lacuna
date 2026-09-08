@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { scenariosForLang } from '../data/fondations'
-import { useSettingsStore } from '../stores/settings'
+import { LANGS, useSettingsStore } from '../stores/settings'
 import { listen, matches, requestSpeechPermission, speechAvailability } from '../services/speech'
 import { correctFeedback, tapFeedback, wrongFeedback } from '../services/feedback'
 import { shuffle } from '../services/shuffle'
@@ -11,7 +11,11 @@ import { correct as askCorrection, isCorrectionAvailable } from '../services/cor
 const emit = defineEmits<{ back: [] }>()
 const settings = useSettingsStore()
 
-const lang = ref('it')
+// Langue non choisie tant qu'elle vaut null : l'écran commence par la
+// demander. Quand l'utilisateur n'en suit qu'une, la question ne se pose pas
+// et on la choisit pour lui — poser une question à réponse unique fait
+// perdre du temps sans rien apporter.
+const lang = ref<string | null>(null)
 const status = ref<'checking' | 'unsupported' | 'denied' | 'ready'>('checking')
 const onDevice = ref(false)
 
@@ -29,22 +33,54 @@ const aiAvailable = ref(false)
 const checking = ref(false)
 const explanation = ref('')
 const better = ref('')
+// helped garde la trace d'un coup de pouce : la phrase cible reste alors
+// visible, et le verdict ne prétend pas que la production était spontanée.
+const helped = ref(false)
 let stopListening: (() => Promise<string>) | null = null
+
+// Les langues proposées sont celles que l'utilisateur suit, pas toutes :
+// proposer de parler espagnol à qui n'apprend que l'italien n'a pas de sens.
+const choices = computed(() => LANGS.filter((l) => settings.langs.includes(l.id)))
 
 onMounted(async () => {
   if (!settings.loaded) await settings.load()
-  lang.value = settings.primaryLang
-  phrases.value = shuffle(scenariosForLang(lang.value).flatMap((s) => s.dialogue))
+  aiAvailable.value = await isCorrectionAvailable()
+  if (choices.value.length === 1) await chooseLang(choices.value[0].id)
+})
 
-  const avail = await speechAvailability(lang.value)
+async function chooseLang(id: string): Promise<void> {
+  void tapFeedback()
+  lang.value = id
+  index.value = 0
+  reset()
+  status.value = 'checking'
+  phrases.value = shuffle(scenariosForLang(id).flatMap((s) => s.dialogue))
+
+  const avail = await speechAvailability(id)
   if (!avail.supported) {
     status.value = 'unsupported'
     return
   }
   onDevice.value = avail.onDevice
   status.value = (await requestSpeechPermission()) ? 'ready' : 'denied'
-  aiAvailable.value = await isCorrectionAvailable()
-})
+}
+
+function changeLang(): void {
+  void tapFeedback()
+  void stopListening?.()
+  stopListening = null
+  recording.value = false
+  lang.value = null
+  reset()
+}
+
+function reset(): void {
+  heard.value = ''
+  verdict.value = 'none'
+  explanation.value = ''
+  better.value = ''
+  helped.value = false
+}
 
 // Le micro doit être relâché si l'écran est quitté en cours d'enregistrement,
 // sinon la session audio reste ouverte et l'app garde la main sur le son.
@@ -59,13 +95,10 @@ async function toggle(): Promise<void> {
     return
   }
 
-  heard.value = ''
-  verdict.value = 'none'
-  explanation.value = ''
-  better.value = ''
+  reset()
   recording.value = true
   try {
-    stopListening = await listen(lang.value, (t) => (heard.value = t))
+    stopListening = await listen(lang.value!, (t) => (heard.value = t))
   } catch (err) {
     recording.value = false
     reportError(err, toggle)
@@ -100,7 +133,7 @@ async function finish(): Promise<void> {
   }
 
   checking.value = true
-  const result = await askCorrection(lang.value, phrase.value.target, phrase.value.fr, finalText)
+  const result = await askCorrection(lang.value!, phrase.value.target, phrase.value.fr, finalText)
   checking.value = false
 
   if (!result) {
@@ -117,12 +150,14 @@ async function finish(): Promise<void> {
   void (result.ok ? correctFeedback() : wrongFeedback())
 }
 
+function help(): void {
+  void tapFeedback()
+  helped.value = true
+}
+
 function next(): void {
   void tapFeedback()
-  heard.value = ''
-  verdict.value = 'none'
-  explanation.value = ''
-  better.value = ''
+  reset()
   index.value = (index.value + 1) % Math.max(1, phrases.value.length)
 }
 </script>
@@ -132,11 +167,26 @@ function next(): void {
     <header>
       <button class="back" @click="emit('back')">←</button>
       <p class="wordmark">Parler</p>
+      <button v-if="lang && choices.length > 1" class="lang-swap" @click="changeLang">
+        {{ lang === 'es' ? '🇪🇸' : '🇮🇹' }}
+      </button>
     </header>
 
     <div class="body">
-      <template v-if="status === 'checking'">
-        <p class="hint">Vérification du micro…</p>
+      <!-- Choix de la langue avant de commencer : on ne s'entraîne pas à
+           l'oral dans une langue qu'on n'avait pas en tête. -->
+      <template v-if="!lang">
+        <p class="label">Tu parles en</p>
+        <div class="lang-choices">
+          <button v-for="l in choices" :key="l.id" class="lang-choice" @click="chooseLang(l.id)">
+            <span class="flag">{{ l.flag }}</span>
+            <span>{{ l.label }}</span>
+          </button>
+        </div>
+      </template>
+
+      <template v-else-if="status === 'checking'">
+        <p class="loading">Vérification du micro…</p>
       </template>
 
       <template v-else-if="status === 'unsupported'">
@@ -158,11 +208,11 @@ function next(): void {
 
         <!-- La phrase cible ne s'affiche qu'après coup : la lire pendant
              qu'on parle transformerait la production en lecture à voix haute. -->
-        <p v-if="verdict !== 'none'" class="target">{{ phrase.target }}</p>
+        <p v-if="verdict !== 'none' || helped" class="target">{{ phrase.target }}</p>
 
         <p v-if="heard" class="heard" :class="verdict">« {{ heard }} »</p>
 
-        <p v-if="checking" class="hint">Analyse…</p>
+        <p v-if="checking" class="loading">Analyse en cours…</p>
         <p v-else-if="verdict === 'ok'" class="feedback ok">Exact.</p>
         <p v-else-if="verdict === 'ko'" class="feedback ko">Pas tout à fait.</p>
 
@@ -179,11 +229,20 @@ function next(): void {
       </template>
     </div>
 
-    <div v-if="status === 'ready'" class="controls">
-      <button class="mic" :class="{ on: recording }" @click="toggle">
+    <!-- Tout est verrouillé pendant l'analyse : enchaîner pendant qu'une
+         correction arrive ferait afficher le retour sur la phrase suivante. -->
+    <div v-if="lang && status === 'ready'" class="controls">
+      <button class="mic" :class="{ on: recording }" :disabled="checking" @click="toggle">
         {{ recording ? 'Arrêter' : '🎙 Parler' }}
       </button>
-      <button class="next" @click="next">Suivante</button>
+      <!-- Le micro sur sa propre ligne : c'est l'action principale, et trois
+           boutons côte à côte écrasaient « Aide-moi » sur deux lignes. -->
+      <div class="secondary">
+        <button class="aide" :disabled="checking || recording || helped" @click="help">
+          {{ helped ? 'Réponse affichée' : '💡 Aide-moi' }}
+        </button>
+        <button class="next" :disabled="checking" @click="next">Suivante</button>
+      </div>
     </div>
   </div>
 </template>
@@ -285,14 +344,66 @@ header {
   font-size: 0.8rem;
   color: var(--ink-faint);
 }
+.lang-swap {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.lang-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+.lang-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.25rem 1.15rem;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.lang-choice .flag {
+  font-size: 1.4rem;
+  line-height: 1;
+}
 .controls {
   flex: none;
   display: flex;
+  flex-direction: column;
   gap: 0.6rem;
   padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
 }
+.secondary {
+  display: flex;
+  gap: 0.6rem;
+}
+.controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.aide {
+  flex: 1;
+  padding: 0.9rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--gold);
+  background: var(--gold-wash);
+  color: var(--gold-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+}
 .mic {
-  flex: 2;
+  width: 100%;
   padding: 1.1rem;
   border-radius: 999px;
   border: none;
@@ -309,7 +420,7 @@ header {
 }
 .next {
   flex: 1;
-  padding: 1.1rem;
+  padding: 0.9rem;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--glass);

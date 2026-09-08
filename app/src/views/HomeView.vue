@@ -83,7 +83,7 @@ function formatDate(iso: string | null): string {
     <section>
       <p class="label section-label">À regarder</p>
 
-      <p v-if="videos.loading" class="hint">Chargement…</p>
+      <p v-if="videos.loading" class="loading">Chargement…</p>
       <p v-else-if="videos.error" class="error">
         {{ ERROR_TEXT }}
         <button class="inline-retry" @click="videos.fetch()">Réessayer</button>
