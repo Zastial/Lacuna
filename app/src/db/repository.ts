@@ -83,20 +83,21 @@ export async function deleteEpisode(episodeId: number): Promise<string | null> {
   const episode = await getEpisode(episodeId)
   if (!episode) return null
 
-  await db.execute('BEGIN TRANSACTION')
-  try {
-    await db.run(
-      `DELETE FROM review_state WHERE segment_id IN (SELECT id FROM segment WHERE episode_id = ?)`,
-      [episodeId],
-    )
-    await db.run('DELETE FROM capture WHERE episode_id = ?', [episodeId])
-    await db.run('DELETE FROM segment WHERE episode_id = ?', [episodeId])
-    await db.run('DELETE FROM episode WHERE id = ?', [episodeId])
-    await db.execute('COMMIT')
-  } catch (err) {
-    await db.execute('ROLLBACK')
-    throw err
-  }
+  // Un BEGIN manuel autour de run() échouait avec « cannot start a
+  // transaction within a transaction » : run() ouvre déjà sa propre
+  // transaction (3e paramètre à true par défaut). executeSet groupe les
+  // quatre suppressions dans une seule transaction côté plugin, ce qui
+  // garde l'atomicité sans imbrication — même raison qu'en tête de fichier.
+  // L'ordre va des dépendances vers le parent.
+  await db.executeSet([
+    {
+      statement: 'DELETE FROM review_state WHERE segment_id IN (SELECT id FROM segment WHERE episode_id = ?)',
+      values: [episodeId],
+    },
+    { statement: 'DELETE FROM capture WHERE episode_id = ?', values: [episodeId] },
+    { statement: 'DELETE FROM segment WHERE episode_id = ?', values: [episodeId] },
+    { statement: 'DELETE FROM episode WHERE id = ?', values: [episodeId] },
+  ])
 
   return episode.audioRelativePath
 }
@@ -216,9 +217,21 @@ export async function getDueReviewItems(nowMs: number, limit = 50): Promise<DueR
   }))
 }
 
+// Les mêmes jointures que getDueReviewItems, délibérément : sans elles, le
+// compteur voyait des review_state orphelins — dont le segment ou l'épisode
+// a été supprimé — que la liste, elle, écartait. La pastille annonçait « 1 »
+// et l'écran de révision s'ouvrait vide. Le compte doit porter sur exactement
+// ce que la file sait afficher.
 export async function countDueReviewItems(nowMs: number): Promise<number> {
   const db = await getDB()
-  const res = await db.query('SELECT count(*) AS n FROM review_state WHERE due_at <= ?', [nowMs])
+  const res = await db.query(
+    `SELECT count(*) AS n
+     FROM review_state r
+     JOIN segment s ON s.id = r.segment_id
+     JOIN episode e ON e.id = s.episode_id
+     WHERE r.due_at <= ?`,
+    [nowMs],
+  )
   return (res.values?.[0]?.n as number) ?? 0
 }
 
