@@ -19,6 +19,7 @@ func NewMux(pool *pgxpool.Pool) http.Handler {
 	mux.HandleFunc("GET /episodes", listEpisodes(pool))
 	mux.HandleFunc("GET /episodes/{id}/segments", episodeSegments(pool))
 	mux.HandleFunc("GET /articles", listArticles(pool))
+	mux.HandleFunc("GET /videos", listVideos(pool))
 	mux.HandleFunc("POST /sync/captures", syncCaptures(pool))
 	mux.HandleFunc("POST /sync/review_state", syncReviewState(pool))
 	mux.HandleFunc("GET /sync/state", syncState(pool))
@@ -264,6 +265,83 @@ func listArticles(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, articles)
+	}
+}
+
+type videoJSON struct {
+	ID           int64   `json:"id"`
+	YouTubeID    string  `json:"youtube_id"`
+	ChannelName  string  `json:"channel_name"`
+	Lang         string  `json:"lang"`
+	Category     string  `json:"category"`
+	Title        string  `json:"title"`
+	Description  string  `json:"description"`
+	ThumbnailURL string  `json:"thumbnail_url"`
+	PublishedAt  *string `json:"published_at"`
+}
+
+const defaultVideoLimit = 20
+const maxVideoLimit = 60
+
+// listVideos filtre par langue et par centres d'intérêt. `categories` accepte
+// une liste séparée par des virgules : l'app envoie d'un coup ce que
+// l'utilisateur a choisi à l'onboarding.
+func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		lang := r.URL.Query().Get("lang")
+
+		categories := []string{}
+		if raw := r.URL.Query().Get("categories"); raw != "" {
+			for _, c := range strings.Split(raw, ",") {
+				if c = strings.TrimSpace(c); c != "" {
+					categories = append(categories, c)
+				}
+			}
+		}
+
+		limit := defaultVideoLimit
+		if raw := r.URL.Query().Get("limit"); raw != "" {
+			if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+				limit = n
+			}
+		}
+		if limit > maxVideoLimit {
+			limit = maxVideoLimit
+		}
+
+		rows, err := pool.Query(r.Context(), `
+			SELECT v.id, v.youtube_video_id, c.name, c.lang, c.category,
+			       v.title, v.description, v.thumbnail_url, v.published_at
+			FROM video v
+			JOIN video_channel c ON c.id = v.channel_id
+			WHERE ($1 = '' OR c.lang = $1)
+			  AND (cardinality($2::text[]) = 0 OR c.category = ANY($2::text[]))
+			ORDER BY v.published_at DESC NULLS LAST, v.id DESC
+			LIMIT $3`,
+			lang, categories, limit)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		videos := []videoJSON{}
+		for rows.Next() {
+			var v videoJSON
+			var publishedAt *time.Time
+			if err := rows.Scan(&v.ID, &v.YouTubeID, &v.ChannelName, &v.Lang, &v.Category,
+				&v.Title, &v.Description, &v.ThumbnailURL, &publishedAt); err != nil {
+				writeError(w, http.StatusInternalServerError, err)
+				return
+			}
+			v.PublishedAt = formatTime(publishedAt)
+			videos = append(videos, v)
+		}
+		if err := rows.Err(); err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, videos)
 	}
 }
 

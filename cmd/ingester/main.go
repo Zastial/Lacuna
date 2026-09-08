@@ -49,19 +49,24 @@ func main() {
 		log.Fatalf("import frequency lists: %v", err)
 	}
 
-	if err := ingest.SeedFeeds(ctx, pool, seedFeeds); err != nil {
-		log.Fatalf("seed feeds: %v", err)
-	}
 	if err := ingest.SeedArticleFeeds(ctx, pool, seedArticleFeeds); err != nil {
 		log.Fatalf("seed article feeds: %v", err)
 	}
+	if err := ingest.SeedVideoChannels(ctx, pool, videoChannels); err != nil {
+		log.Fatalf("seed video channels: %v", err)
+	}
 
 	interval := config.Duration("INGEST_INTERVAL", 6*time.Hour)
-	minRefetch := config.Duration("MIN_REFETCH_INTERVAL", 15*time.Minute)
+	// MIN_REFETCH_INTERVAL n'est lu que par runCycle, déprogrammé avec le
+	// mode audio ; la variable reste documentée pour un éventuel retour.
 	runOnce := config.Bool("RUN_ONCE", false)
 
 	for {
-		runCycle(ctx, pool, rdb, minRefetch)
+		// Le cycle podcast (runCycle) n'est plus programmé : l'app ne lit
+		// plus d'audio, et il téléchargeait transcripts et métadonnées pour
+		// un contenu que plus personne ne consomme. Le code et les tables
+		// restent en place, prêts à être rebranchés ou supprimés.
+		runVideoCycle(ctx, pool)
 		runArticleCycle(ctx, pool)
 
 		if runOnce {
@@ -139,6 +144,30 @@ func runCycle(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client, minRef
 		})
 	}
 	_ = g.Wait()
+}
+
+// runVideoCycle rafraîchit les chaînes YouTube suivies. Même profil que les
+// articles — une poignée de flux Atom, cache conditionnel, pas besoin du
+// garde-fou Redis.
+func runVideoCycle(ctx context.Context, pool *pgxpool.Pool) {
+	channels, err := ingest.LoadVideoChannels(ctx, pool)
+	if err != nil {
+		log.Printf("load video channels: %v", err)
+		return
+	}
+
+	for _, c := range channels {
+		res, err := ingest.IngestVideoChannel(ctx, pool, c)
+		if err != nil {
+			log.Printf("chaîne %d (%s): %v", c.ID, c.Name, err)
+			continue
+		}
+		if res.NotModified {
+			log.Printf("chaîne %d (%s): non modifiée", c.ID, c.Name)
+		} else {
+			log.Printf("chaîne %d (%s): %d vidéos vues", c.ID, c.Name, res.Fetched)
+		}
+	}
 }
 
 // runArticleCycle traite les flux d'articles (peu nombreux, un par grand
