@@ -24,4 +24,7 @@ var seedArticleFeeds = []ingest.SeedArticleFeed{
 	{RSSURL: "https://dwh.lequipe.fr/api/edito/rss?path=/Formule-1/", SourceName: "L'Équipe", Lang: "fr", Sport: "formule-1"},
 	{RSSURL: "https://dwh.lequipe.fr/api/edito/rss?path=/Handball/", SourceName: "L'Équipe", Lang: "fr", Sport: "handball"},
 	{RSSURL: "https://dwh.lequipe.fr/api/edito/rss?path=/Athletisme/", SourceName: "L'Équipe", Lang: "fr", Sport: "athlétisme"},
+	// Le chemin est "Volley-ball" : /Volley/ et /Volleyball/ répondent 200
+	// avec un flux vide plutôt qu'une 404.
+	{RSSURL: "https://dwh.lequipe.fr/api/edito/rss?path=/Volley-ball/", SourceName: "L'Équipe", Lang: "fr", Sport: "volley"},
 }
