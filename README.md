@@ -16,7 +16,8 @@ rarement celui qu'on aurait regardé de toute façon.
 
 Lacuna part de l'inverse : tu dis ce qui t'intéresse — sport, musique,
 informatique, sport automobile, ou simplement apprendre la langue — et l'app
-va chercher des vidéos récentes sur ces sujets, en italien ou en espagnol.
+va chercher des vidéos récentes sur ces sujets, en italien, en espagnol, ou
+dans les deux à la fois.
 À côté, des exercices écrits à la main et une révision espacée qui te ramène
 ce que tu es sur le point d'oublier.
 
@@ -54,6 +55,13 @@ plutôt qu'abandonnée — le fil vidéo est de l'input, assumé comme tel ;
 Fondations, Culture G et la révision espacée sont du rappel actif, sans
 exception.
 
+**On ne coche rien à ta place.** L'onboarding arrive vide : ni langue, ni
+centre d'intérêt pré-sélectionné. Pré-cocher reviendrait à répondre pour
+l'utilisateur, et à ce compte-là autant ne pas poser la question. La
+contrepartie est qu'on refuse d'avancer tant qu'au moins une langue et un
+sujet ne sont pas choisis — sinon l'accueil serait vide au tout premier
+lancement.
+
 **Aucune source ne monopolise le fil.** Trier par date seule laissait la
 chaîne la plus prolifique remplir l'écran : sur 24 vidéos espagnoles, une
 seule chaîne en occupait 15, et cocher un centre d'intérêt de plus ne
@@ -70,8 +78,8 @@ se voir.
 | **Culture G** | Questions de culture générale dans la langue cible, expliquées en français |
 | **Articles** | Presse quotidienne (ANSA, la Repubblica, BBC Mundo, Infobae) avec les mots rares mis en évidence |
 | **Sport** | Les titres de L'Équipe, filtrés sur tes sports, à redire en langue cible |
-| **Onboarding** | Au premier lancement : langue et centres d'intérêt |
-| **Réglages** | Langue, centres d'intérêt, sports, thème clair/sombre, notifications |
+| **Onboarding** | Au premier lancement : langues et centres d'intérêt, rien de pré-coché |
+| **Réglages** | Langues, centres d'intérêt, sports, thème clair/sombre, notifications |
 
 Les vidéos viennent de 15 chaînes suivies par leur flux public, réparties en
 cinq centres d'intérêt (langue, sport, musique, informatique, sport
@@ -101,6 +109,10 @@ app/              Client Vue 3 + Capacitor (iOS)
   src/db/         SQLite local
   ios/App/        Plugin Swift de traduction sur appareil
 ```
+
+Le personnage est une bulle de parole à qui il manque un morceau : la lacune
+du nom, celle que l'app comble. Il est dessiné en SVG dans le client et
+regénéré en PNG pour l'icône iOS, à partir de la même géométrie.
 
 Le backend est en Go (Postgres + Redis, `docker compose up`). Le client est en
 Vue 3 / TypeScript, empaqueté par Capacitor. La répétition espacée utilise
