@@ -34,6 +34,11 @@ onMounted(async () => {
   // Chargé avant tout affichage : c'est ce réglage qui décide si on montre
   // l'onboarding ou l'accueil, et un faux départ sur l'accueil se verrait.
   await settings.load()
+
+  // L'écran de chargement ne part qu'ici, pas au montage de Vue : c'est
+  // settings.load() qui détermine onboarding ou accueil, et le thème forcé.
+  // Le retirer plus tôt montrerait le mauvais écran une fraction de seconde.
+  dismissSplash()
   // Les écrans mono-langue s'ouvrent sur la première langue suivie : garder
   // 'it' en dur donnerait un écran hors sujet à qui n'apprend que l'espagnol.
   void fondations.setLang(settings.primaryLang)
@@ -47,6 +52,17 @@ onMounted(async () => {
 onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval)
 })
+
+// Le splash vit dans index.html, hors de l'app Vue : il doit être peint
+// avant que le bundle n'arrive. On le retire donc à la main.
+function dismissSplash(): void {
+  const splash = document.getElementById('splash')
+  if (!splash) return
+  splash.classList.add('gone')
+  // Retiré du DOM après la transition, pas seulement rendu transparent :
+  // un calque en position fixed sur toute la page intercepterait les taps.
+  setTimeout(() => splash.remove(), 400)
+}
 
 function onBack(): void {
   screen.value = 'home'

@@ -4,8 +4,84 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>Lacuna</title>
+    <!-- Écran de chargement inline, dans le <head> : il doit être peint avant
+         que la moindre feuille de style ou le bundle n'arrivent, sinon le
+         raccord avec l'écran de lancement natif laisse passer un flash blanc.
+         Mêmes couleurs que --bg, et les trois états de thème du reste de
+         l'app pour qu'un thème forcé ne provoque pas de saut. -->
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eaf6f0;
+        transition: opacity 0.28s ease;
+      }
+      #splash.gone {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash svg {
+        width: 96px;
+        height: 96px;
+        animation: splash-in 0.5s ease both;
+      }
+      #splash .bite {
+        fill: #eaf6f0;
+      }
+      @media (prefers-color-scheme: dark) {
+        html:not([data-theme='light']) #splash {
+          background: #0d1a16;
+        }
+        html:not([data-theme='light']) #splash .bite {
+          fill: #0d1a16;
+        }
+      }
+      html[data-theme='dark'] #splash {
+        background: #0d1a16;
+      }
+      html[data-theme='dark'] #splash .bite {
+        fill: #0d1a16;
+      }
+      @keyframes splash-in {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #splash svg {
+          animation: none;
+        }
+        #splash {
+          transition: none;
+        }
+      }
+    </style>
   </head>
   <body>
+    <!-- La même mascotte qu'en tête d'app et sur l'icône, en SVG inline :
+         aucune requête à attendre pour l'afficher. -->
+    <div id="splash">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path
+          fill="#00b37e"
+          d="M22 12 h48 a20 20 0 0 1 20 20 v24 a20 20 0 0 1 -20 20 h-22 l-18 15 v-15 h-8 a20 20 0 0 1 -20 -20 v-24 a20 20 0 0 1 20 -20 z"
+        />
+        <circle class="bite" cx="92" cy="40" r="17" />
+        <circle fill="#052e23" cx="36" cy="42" r="6" />
+        <circle fill="#052e23" cx="60" cy="42" r="6" />
+        <path d="M35 58 q13 11 26 0" fill="none" stroke="#052e23" stroke-width="5" stroke-linecap="round" />
+      </svg>
+    </div>
+
     <div id="app">
       <pre id="boot-fallback" style="white-space:pre-wrap;padding:1rem;padding-top:calc(1rem + env(safe-area-inset-top));font:12px monospace;color:#c00;"></pre>
     </div>
@@ -24,6 +100,16 @@
           el.textContent += 'main.ts ne s\'est pas exécuté après 3s (script non chargé ?)\n'
         }
       }, 3000)
+
+      // Garde-fou : normalement l'app retire le splash quand elle est prête.
+      // Si son démarrage échoue, ce calque plein écran resterait posé sur
+      // tout et rendrait l'app inutilisable — un écran de chargement figé est
+      // pire qu'un écran d'erreur. Au bout de 8 s, on le retire quoi qu'il
+      // arrive, ce qui laisse voir le message de secours en dessous.
+      setTimeout(function () {
+        var splash = document.getElementById('splash')
+        if (splash) splash.remove()
+      }, 8000)
     </script>
     <script type="module" src="/src/main.ts"></script>
   </body>

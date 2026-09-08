@@ -18,4 +18,28 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(LacunaLinksPlugin())
         bridge?.registerPluginInstance(LacunaTranslatePlugin())
     }
+
+    /// Fond aux couleurs de l'app sous la WebView.
+    ///
+    /// Entre l'écran de lancement natif et la première peinture du HTML, on
+    /// voyait une frame blanche — mesurée à (253,253,253) sur une capture en
+    /// rafale, encadrée par du noir puis par le fond de l'app. La WebView
+    /// est blanche par défaut, et ce blanc traverse l'écran de chargement
+    /// qu'il était censé masquer.
+    ///
+    /// La couleur est dynamique plutôt que fixe : un fond clair figé
+    /// clignoterait sur un téléphone en thème sombre.
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let background = UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.051, green: 0.102, blue: 0.086, alpha: 1) // --bg sombre
+                : UIColor(red: 0.918, green: 0.965, blue: 0.941, alpha: 1) // --bg clair
+        }
+        view.backgroundColor = background
+        webView?.backgroundColor = background
+        webView?.isOpaque = false
+        webView?.scrollView.backgroundColor = background
+    }
 }
