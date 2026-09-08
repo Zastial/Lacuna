@@ -37,3 +37,26 @@ export function listArticles(
   const suffix = qs.toString() ? `?${qs.toString()}` : ''
   return getJSON<ApiArticle[]>(`/articles${suffix}`)
 }
+
+// --- Correction des phrases produites (backend -> Gemini) ---
+
+export function correctionEnabled(): Promise<boolean> {
+  return getJSON<{ enabled: boolean }>('/correct/status').then((r) => r.enabled)
+}
+
+export async function correctSentence(body: {
+  lang: string
+  expected: string
+  expected_fr: string
+  said: string
+}): Promise<{ ok: boolean; corrected: string; explanation: string }> {
+  const res = await fetch(`${BASE_URL}/correct`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    throw new Error(`POST /correct: HTTP ${res.status}`)
+  }
+  return (await res.json()) as { ok: boolean; corrected: string; explanation: string }
+}

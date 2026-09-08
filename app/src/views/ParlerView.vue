@@ -6,6 +6,7 @@ import { listen, matches, requestSpeechPermission, speechAvailability } from '..
 import { correctFeedback, tapFeedback, wrongFeedback } from '../services/feedback'
 import { shuffle } from '../services/shuffle'
 import { reportError } from '../services/toast'
+import { correct as askCorrection, isCorrectionAvailable } from '../services/correct'
 
 const emit = defineEmits<{ back: [] }>()
 const settings = useSettingsStore()
@@ -24,6 +25,10 @@ const phrase = computed(() => phrases.value[index.value] ?? null)
 const recording = ref(false)
 const heard = ref('')
 const verdict = ref<'none' | 'ok' | 'ko'>('none')
+const aiAvailable = ref(false)
+const checking = ref(false)
+const explanation = ref('')
+const better = ref('')
 let stopListening: (() => Promise<string>) | null = null
 
 onMounted(async () => {
@@ -38,6 +43,7 @@ onMounted(async () => {
   }
   onDevice.value = avail.onDevice
   status.value = (await requestSpeechPermission()) ? 'ready' : 'denied'
+  aiAvailable.value = await isCorrectionAvailable()
 })
 
 // Le micro doit être relâché si l'écran est quitté en cours d'enregistrement,
@@ -55,6 +61,8 @@ async function toggle(): Promise<void> {
 
   heard.value = ''
   verdict.value = 'none'
+  explanation.value = ''
+  better.value = ''
   recording.value = true
   try {
     stopListening = await listen(lang.value, (t) => (heard.value = t))
@@ -74,15 +82,47 @@ async function finish(): Promise<void> {
   heard.value = finalText
   if (!phrase.value) return
 
-  const ok = matches(finalText, phrase.value.target)
-  verdict.value = ok ? 'ok' : 'ko'
-  void (ok ? correctFeedback() : wrongFeedback())
+  // Comparaison littérale d'abord : instantanée, hors ligne, et elle suffit
+  // quand la phrase est dite mot pour mot. L'IA n'est sollicitée que si elle
+  // peut apporter quelque chose — expliquer une faute, ou reconnaître une
+  // formulation correcte que la comparaison stricte aurait rejetée.
+  const literal = matches(finalText, phrase.value.target)
+  if (literal) {
+    verdict.value = 'ok'
+    void correctFeedback()
+    return
+  }
+
+  if (!aiAvailable.value) {
+    verdict.value = 'ko'
+    void wrongFeedback()
+    return
+  }
+
+  checking.value = true
+  const result = await askCorrection(lang.value, phrase.value.target, phrase.value.fr, finalText)
+  checking.value = false
+
+  if (!result) {
+    // Correction indisponible (quota, réseau) : on retombe sur le verdict
+    // littéral plutôt que de bloquer l'exercice.
+    verdict.value = 'ko'
+    void wrongFeedback()
+    return
+  }
+
+  verdict.value = result.ok ? 'ok' : 'ko'
+  explanation.value = result.explanation
+  better.value = result.corrected
+  void (result.ok ? correctFeedback() : wrongFeedback())
 }
 
 function next(): void {
   void tapFeedback()
   heard.value = ''
   verdict.value = 'none'
+  explanation.value = ''
+  better.value = ''
   index.value = (index.value + 1) % Math.max(1, phrases.value.length)
 }
 </script>
@@ -122,9 +162,13 @@ function next(): void {
 
         <p v-if="heard" class="heard" :class="verdict">« {{ heard }} »</p>
 
-        <p v-if="verdict === 'ok'" class="feedback ok">Exact.</p>
-        <p v-else-if="verdict === 'ko'" class="feedback ko">
-          Pas tout à fait — réessaie, ou passe à la suivante.
+        <p v-if="checking" class="hint">Analyse…</p>
+        <p v-else-if="verdict === 'ok'" class="feedback ok">Exact.</p>
+        <p v-else-if="verdict === 'ko'" class="feedback ko">Pas tout à fait.</p>
+
+        <p v-if="explanation" class="explanation">{{ explanation }}</p>
+        <p v-if="better && better !== phrase.target" class="better">
+          Un natif dirait : {{ better }}
         </p>
 
         <p v-if="!onDevice" class="note">
@@ -213,6 +257,22 @@ header {
 }
 .feedback.ko {
   color: var(--coral-ink);
+}
+.explanation {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--gold-wash);
+  padding: 0.8rem 1rem;
+  border-radius: 16px;
+  margin: 0.75rem 0 0;
+}
+.better {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--teal-ink);
+  margin: 0.6rem 0 0;
 }
 .hint,
 .note {

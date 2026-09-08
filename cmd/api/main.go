@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"lacuna/internal/ai"
 	"lacuna/internal/apihttp"
 	"lacuna/internal/config"
 	"lacuna/internal/db"
@@ -33,7 +34,7 @@ func main() {
 	defer pool.Close()
 
 	addr := config.APIAddr()
-	srv := &http.Server{Addr: addr, Handler: apihttp.NewMux(pool)}
+	srv := &http.Server{Addr: addr, Handler: apihttp.NewMux(pool, ai.NewClient(config.String("GEMINI_API_KEY", "")))}
 
 	go func() {
 		<-ctx.Done()

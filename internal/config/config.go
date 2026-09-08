@@ -44,6 +44,16 @@ func Duration(envVar string, def time.Duration) time.Duration {
 	return d
 }
 
+// String lit une variable d'environnement optionnelle. Une valeur absente
+// n'est pas une erreur : la clé Gemini, par exemple, est facultative — sans
+// elle l'app tourne, seule la correction est masquée.
+func String(envVar, def string) string {
+	if v := os.Getenv(envVar); v != "" {
+		return v
+	}
+	return def
+}
+
 func Bool(envVar string, def bool) bool {
 	v := os.Getenv(envVar)
 	if v == "" {

@@ -5,16 +5,21 @@ package apihttp
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"lacuna/internal/ai"
 )
 
-func NewMux(pool *pgxpool.Pool) http.Handler {
+func NewMux(pool *pgxpool.Pool, ai *ai.Client) http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /correct", correct(ai))
+	mux.HandleFunc("GET /correct/status", correctStatus(ai))
 	mux.HandleFunc("GET /articles", listArticles(pool))
 	mux.HandleFunc("GET /videos", listVideos(pool))
 	mux.HandleFunc("GET /healthz", healthz(pool))
@@ -221,6 +226,46 @@ func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, videos)
+	}
+}
+
+type correctRequest struct {
+	Lang       string `json:"lang"`
+	Expected   string `json:"expected"`
+	ExpectedFr string `json:"expected_fr"`
+	Said       string `json:"said"`
+}
+
+// correctStatus permet à l'app de savoir si la correction est disponible
+// avant de proposer un bouton. Sans clé côté serveur, mieux vaut masquer la
+// fonctionnalité que laisser l'utilisateur buter dessus.
+func correctStatus(client *ai.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]bool{"enabled": client.Enabled()})
+	}
+}
+
+func correct(client *ai.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req correctRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		if !client.Enabled() {
+			writeError(w, http.StatusServiceUnavailable, fmt.Errorf("correction non configurée"))
+			return
+		}
+
+		result, err := client.Correct(r.Context(), req.Lang, req.Expected, req.ExpectedFr, req.Said)
+		if err != nil {
+			// 502 et non 500 : l'échec vient du service en amont, souvent une
+			// limite de débit du palier gratuit. La distinction permet à
+			// l'app de proposer un nouvel essai plutôt qu'un message fatal.
+			writeError(w, http.StatusBadGateway, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, result)
 	}
 }
 
