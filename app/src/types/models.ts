@@ -132,11 +132,15 @@ export interface ScenarioVocab {
 
 export interface ScenarioMCQOption {
   target: string
+  // Traduction montrée une fois la réponse donnée, sur toutes les options :
+  // savoir pourquoi les autres étaient fausses vaut autant que la bonne.
+  fr: string
   correct: boolean
 }
 
 export interface ScenarioMCQ {
   prompt: string
+  fr: string
   options: ScenarioMCQOption[]
   hint: string
 }
@@ -154,6 +158,10 @@ export interface ConjugItem {
   // Traduction française du verbe, affichée à côté du lemme sur les items
   // générés (les scénarios écrits à la main la donnent déjà en contexte).
   hint?: string
+  // Traduction française de la phrase complète, montrée après la réponse.
+  // Absente sur les items générés, dont la phrase se réduit au pronom et au
+  // verbe : le lemme français et le temps sont déjà affichés au-dessus.
+  promptFr?: string
 }
 
 export interface Scenario {

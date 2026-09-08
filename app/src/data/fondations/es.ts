@@ -19,17 +19,18 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'El camarero pregunta: «¿Qué desea?» Tú respondes:',
+        fr: 'Le serveur demande : « Que désirez-vous ? » Tu réponds :',
         options: [
-          { target: 'Quería un café, por favor.', correct: true },
-          { target: 'Me llamo Alex.', correct: false },
-          { target: 'Son las tres.', correct: false },
+          { target: 'Quería un café, por favor.', fr: 'Je voudrais un café, s’il vous plaît.', correct: true },
+          { target: 'Me llamo Alex.', fr: 'Je m’appelle Alex.', correct: false },
+          { target: 'Son las tres.', fr: 'Il est trois heures.', correct: false },
         ],
         hint: 'quería + [chose] = façon polie de commander',
       },
     ],
     conjugation: [
-      { id: 'es-ser-yo-presente', verb: 'ser', tense: 'presente', prompt: 'yo ___ de Francia', options: ['soy', 'eres', 'es'], answer: 'soy' },
-      { id: 'es-ser-tu-presente', verb: 'ser', tense: 'presente', prompt: 'tú ___ español?', options: ['eres', 'soy', 'es'], answer: 'eres' },
+      { id: 'es-ser-yo-presente', verb: 'ser', tense: 'presente', prompt: 'yo ___ de Francia', promptFr: 'je suis de France', options: ['soy', 'eres', 'es'], answer: 'soy' },
+      { id: 'es-ser-tu-presente', verb: 'ser', tense: 'presente', prompt: 'tú ___ español?', promptFr: 'tu es espagnol ?', options: ['eres', 'soy', 'es'], answer: 'eres' },
     ],
   },
   {
@@ -50,18 +51,19 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'Ana te pregunta: «¿Cómo estás?» (no quién eres). Tú respondes:',
+        fr: 'Ana te demande : « Comment vas-tu ? » (pas qui tu es). Tu réponds :',
         options: [
-          { target: 'Estoy muy bien, gracias.', correct: true },
-          { target: 'Soy de España.', correct: false },
-          { target: 'Voy al bar.', correct: false },
+          { target: 'Estoy muy bien, gracias.', fr: 'Je vais très bien, merci.', correct: true },
+          { target: 'Soy de España.', fr: 'Je suis d’Espagne.', correct: false },
+          { target: 'Voy al bar.', fr: 'Je vais au bar.', correct: false },
         ],
         hint: 'estar = état du moment, ser = identité — ici on te demande comment tu vas',
       },
     ],
     conjugation: [
-      { id: 'es-estar-yo-presente', verb: 'estar', tense: 'presente', prompt: 'yo ___ cansado hoy', options: ['estoy', 'estás', 'está'], answer: 'estoy' },
-      { id: 'es-estar-tu-presente', verb: 'estar', tense: 'presente', prompt: 'tú ___ bien?', options: ['estás', 'estoy', 'está'], answer: 'estás' },
-      { id: 'es-ser-tu-presente', verb: 'ser', tense: 'presente', prompt: 'tú ___ español?', options: ['eres', 'soy', 'es'], answer: 'eres' },
+      { id: 'es-estar-yo-presente', verb: 'estar', tense: 'presente', prompt: 'yo ___ cansado hoy', promptFr: 'je suis fatigué aujourd’hui', options: ['estoy', 'estás', 'está'], answer: 'estoy' },
+      { id: 'es-estar-tu-presente', verb: 'estar', tense: 'presente', prompt: 'tú ___ bien?', promptFr: 'tu vas bien ?', options: ['estás', 'estoy', 'está'], answer: 'estás' },
+      { id: 'es-ser-tu-presente', verb: 'ser', tense: 'presente', prompt: 'tú ___ español?', promptFr: 'tu es espagnol ?', options: ['eres', 'soy', 'es'], answer: 'eres' },
     ],
   },
   {
@@ -82,19 +84,20 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'Quieres saber dónde está la estación. Preguntas:',
+        fr: 'Tu veux savoir où est la gare. Tu demandes :',
         options: [
-          { target: 'Perdona, ¿dónde está la estación?', correct: true },
-          { target: 'Me llamo Alex.', correct: false },
-          { target: 'Quería un café.', correct: false },
+          { target: 'Perdona, ¿dónde está la estación?', fr: 'Excuse-moi, où est la gare ?', correct: true },
+          { target: 'Me llamo Alex.', fr: 'Je m’appelle Alex.', correct: false },
+          { target: 'Quería un café.', fr: 'Je voudrais un café.', correct: false },
         ],
         hint: '¿dónde está? = pour localiser quelque chose',
       },
     ],
     conjugation: [
-      { id: 'es-ir-yo-presente', verb: 'ir', tense: 'presente', prompt: 'yo ___ al trabajo', options: ['voy', 'vas', 'va'], answer: 'voy' },
-      { id: 'es-ir-tu-presente', verb: 'ir', tense: 'presente', prompt: 'tú ___ a pie?', options: ['vas', 'voy', 'va'], answer: 'vas' },
-      { id: 'es-estar-yo-presente', verb: 'estar', tense: 'presente', prompt: 'yo ___ cansado hoy', options: ['estoy', 'estás', 'está'], answer: 'estoy' },
-      { id: 'es-ser-tu-presente', verb: 'ser', tense: 'presente', prompt: 'tú ___ español?', options: ['eres', 'soy', 'es'], answer: 'eres' },
+      { id: 'es-ir-yo-presente', verb: 'ir', tense: 'presente', prompt: 'yo ___ al trabajo', promptFr: 'je vais au travail', options: ['voy', 'vas', 'va'], answer: 'voy' },
+      { id: 'es-ir-tu-presente', verb: 'ir', tense: 'presente', prompt: 'tú ___ a pie?', promptFr: 'tu y vas à pied ?', options: ['vas', 'voy', 'va'], answer: 'vas' },
+      { id: 'es-estar-yo-presente', verb: 'estar', tense: 'presente', prompt: 'yo ___ cansado hoy', promptFr: 'je suis fatigué aujourd’hui', options: ['estoy', 'estás', 'está'], answer: 'estoy' },
+      { id: 'es-ser-tu-presente', verb: 'ser', tense: 'presente', prompt: 'tú ___ español?', promptFr: 'tu es espagnol ?', options: ['eres', 'soy', 'es'], answer: 'eres' },
     ],
   },
   {
@@ -115,19 +118,20 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'El camarero pregunta si tenéis mesa reservada. Tú respondes:',
+        fr: 'Le serveur demande si vous avez réservé une table. Tu réponds :',
         options: [
-          { target: 'Sí, una mesa para dos, por favor.', correct: true },
-          { target: 'Soy de Francia.', correct: false },
-          { target: 'Todo recto.', correct: false },
+          { target: 'Sí, una mesa para dos, por favor.', fr: 'Oui, une table pour deux, s’il vous plaît.', correct: true },
+          { target: 'Soy de Francia.', fr: 'Je suis de France.', correct: false },
+          { target: 'Todo recto.', fr: 'Tout droit.', correct: false },
         ],
         hint: '¿tienen reserva? = question sur la réservation, réponds-y directement',
       },
     ],
     conjugation: [
-      { id: 'es-querer-yo-presente', verb: 'querer', tense: 'presente', prompt: 'yo ___ la cuenta', options: ['quiero', 'quieres', 'quiere'], answer: 'quiero' },
-      { id: 'es-querer-tu-presente', verb: 'querer', tense: 'presente', prompt: 'tú ___ reservar?', options: ['quieres', 'quiero', 'quiere'], answer: 'quieres' },
-      { id: 'es-ir-yo-presente', verb: 'ir', tense: 'presente', prompt: 'yo ___ al trabajo', options: ['voy', 'vas', 'va'], answer: 'voy' },
-      { id: 'es-estar-tu-presente', verb: 'estar', tense: 'presente', prompt: 'tú ___ bien?', options: ['estás', 'estoy', 'está'], answer: 'estás' },
+      { id: 'es-querer-yo-presente', verb: 'querer', tense: 'presente', prompt: 'yo ___ la cuenta', promptFr: 'je veux l’addition', options: ['quiero', 'quieres', 'quiere'], answer: 'quiero' },
+      { id: 'es-querer-tu-presente', verb: 'querer', tense: 'presente', prompt: 'tú ___ reservar?', promptFr: 'tu veux réserver ?', options: ['quieres', 'quiero', 'quiere'], answer: 'quieres' },
+      { id: 'es-ir-yo-presente', verb: 'ir', tense: 'presente', prompt: 'yo ___ al trabajo', promptFr: 'je vais au travail', options: ['voy', 'vas', 'va'], answer: 'voy' },
+      { id: 'es-estar-tu-presente', verb: 'estar', tense: 'presente', prompt: 'tú ___ bien?', promptFr: 'tu vas bien ?', options: ['estás', 'estoy', 'está'], answer: 'estás' },
     ],
   },
   {
@@ -148,19 +152,20 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'El vendedor pregunta: «¿Puedo ayudarle?» Tú respondes:',
+        fr: 'Le vendeur demande : « Je peux vous aider ? » Tu réponds :',
         options: [
-          { target: 'Sí, quería un kilo de tomates.', correct: true },
-          { target: 'Tengo que ir a la estación.', correct: false },
-          { target: 'Estoy muy bien, gracias.', correct: false },
+          { target: 'Sí, quería un kilo de tomates.', fr: 'Oui, je voudrais un kilo de tomates.', correct: true },
+          { target: 'Tengo que ir a la estación.', fr: 'Je dois aller à la gare.', correct: false },
+          { target: 'Estoy muy bien, gracias.', fr: 'Je vais très bien, merci.', correct: false },
         ],
         hint: 'On répond à une offre d’aide en disant ce qu’on veut',
       },
     ],
     conjugation: [
-      { id: 'es-poder-yo-presente', verb: 'poder', tense: 'presente', prompt: 'yo ___ pagar con tarjeta?', options: ['puedo', 'puedes', 'puede'], answer: 'puedo' },
-      { id: 'es-poder-tu-presente', verb: 'poder', tense: 'presente', prompt: 'tú ___ ayudarme?', options: ['puedes', 'puedo', 'puede'], answer: 'puedes' },
-      { id: 'es-querer-yo-presente', verb: 'querer', tense: 'presente', prompt: 'yo ___ la cuenta', options: ['quiero', 'quieres', 'quiere'], answer: 'quiero' },
-      { id: 'es-ir-tu-presente', verb: 'ir', tense: 'presente', prompt: 'tú ___ a pie?', options: ['vas', 'voy', 'va'], answer: 'vas' },
+      { id: 'es-poder-yo-presente', verb: 'poder', tense: 'presente', prompt: 'yo ___ pagar con tarjeta?', promptFr: 'je peux payer par carte ?', options: ['puedo', 'puedes', 'puede'], answer: 'puedo' },
+      { id: 'es-poder-tu-presente', verb: 'poder', tense: 'presente', prompt: 'tú ___ ayudarme?', promptFr: 'tu peux m’aider ?', options: ['puedes', 'puedo', 'puede'], answer: 'puedes' },
+      { id: 'es-querer-yo-presente', verb: 'querer', tense: 'presente', prompt: 'yo ___ la cuenta', promptFr: 'je veux l’addition', options: ['quiero', 'quieres', 'quiere'], answer: 'quiero' },
+      { id: 'es-ir-tu-presente', verb: 'ir', tense: 'presente', prompt: 'tú ___ a pie?', promptFr: 'tu y vas à pied ?', options: ['vas', 'voy', 'va'], answer: 'vas' },
     ],
   },
   {
@@ -181,19 +186,20 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'El revisor pregunta a dónde tienes que ir. Tú respondes:',
+        fr: 'Le contrôleur demande où tu dois aller. Tu réponds :',
         options: [
-          { target: 'Tengo que ir a la estación central.', correct: true },
-          { target: '¿Puedo ayudarle?', correct: false },
-          { target: 'Quería un kilo de tomates.', correct: false },
+          { target: 'Tengo que ir a la estación central.', fr: 'Je dois aller à la gare centrale.', correct: true },
+          { target: '¿Puedo ayudarle?', fr: 'Je peux vous aider ?', correct: false },
+          { target: 'Quería un kilo de tomates.', fr: 'Je voudrais un kilo de tomates.', correct: false },
         ],
         hint: 'tengo que + [destination] = pour dire où on doit aller',
       },
     ],
     conjugation: [
-      { id: 'es-tener-yo-presente', verb: 'tener', tense: 'presente', prompt: 'yo ___ prisa', options: ['tengo', 'tienes', 'tiene'], answer: 'tengo' },
-      { id: 'es-tener-tu-presente', verb: 'tener', tense: 'presente', prompt: 'tú ___ hambre?', options: ['tienes', 'tengo', 'tiene'], answer: 'tienes' },
-      { id: 'es-poder-yo-presente', verb: 'poder', tense: 'presente', prompt: 'yo ___ pagar con tarjeta?', options: ['puedo', 'puedes', 'puede'], answer: 'puedo' },
-      { id: 'es-estar-yo-presente', verb: 'estar', tense: 'presente', prompt: 'yo ___ cansado hoy', options: ['estoy', 'estás', 'está'], answer: 'estoy' },
+      { id: 'es-tener-yo-presente', verb: 'tener', tense: 'presente', prompt: 'yo ___ prisa', promptFr: 'je suis pressé', options: ['tengo', 'tienes', 'tiene'], answer: 'tengo' },
+      { id: 'es-tener-tu-presente', verb: 'tener', tense: 'presente', prompt: 'tú ___ hambre?', promptFr: 'tu as faim ?', options: ['tienes', 'tengo', 'tiene'], answer: 'tienes' },
+      { id: 'es-poder-yo-presente', verb: 'poder', tense: 'presente', prompt: 'yo ___ pagar con tarjeta?', promptFr: 'je peux payer par carte ?', options: ['puedo', 'puedes', 'puede'], answer: 'puedo' },
+      { id: 'es-estar-yo-presente', verb: 'estar', tense: 'presente', prompt: 'yo ___ cansado hoy', promptFr: 'je suis fatigué aujourd’hui', options: ['estoy', 'estás', 'está'], answer: 'estoy' },
     ],
   },
   {
@@ -214,19 +220,20 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'El compañero pregunta: «¿Qué haces hoy?» Tú respondes:',
+        fr: 'Le collègue demande : « Tu fais quoi aujourd’hui ? » Tu réponds :',
         options: [
-          { target: 'Hago una reunión importante.', correct: true },
-          { target: 'Tengo que salir a las ocho.', correct: false },
-          { target: '¿Puedo ayudarle?', correct: false },
+          { target: 'Hago una reunión importante.', fr: 'J’ai une réunion importante.', correct: true },
+          { target: 'Tengo que salir a las ocho.', fr: 'Je dois partir à huit heures.', correct: false },
+          { target: '¿Puedo ayudarle?', fr: 'Je peux vous aider ?', correct: false },
         ],
         hint: 'hago = je fais, pour décrire une activité en cours',
       },
     ],
     conjugation: [
-      { id: 'es-hacer-yo-presente', verb: 'hacer', tense: 'presente', prompt: 'yo ___ deporte los lunes', options: ['hago', 'haces', 'hace'], answer: 'hago' },
-      { id: 'es-hacer-tu-presente', verb: 'hacer', tense: 'presente', prompt: 'tú ___ ejercicio?', options: ['haces', 'hago', 'hace'], answer: 'haces' },
-      { id: 'es-tener-yo-presente', verb: 'tener', tense: 'presente', prompt: 'yo ___ prisa', options: ['tengo', 'tienes', 'tiene'], answer: 'tengo' },
-      { id: 'es-ser-yo-presente', verb: 'ser', tense: 'presente', prompt: 'yo ___ de Francia', options: ['soy', 'eres', 'es'], answer: 'soy' },
+      { id: 'es-hacer-yo-presente', verb: 'hacer', tense: 'presente', prompt: 'yo ___ deporte los lunes', promptFr: 'je fais du sport le lundi', options: ['hago', 'haces', 'hace'], answer: 'hago' },
+      { id: 'es-hacer-tu-presente', verb: 'hacer', tense: 'presente', prompt: 'tú ___ ejercicio?', promptFr: 'tu fais de l’exercice ?', options: ['haces', 'hago', 'hace'], answer: 'haces' },
+      { id: 'es-tener-yo-presente', verb: 'tener', tense: 'presente', prompt: 'yo ___ prisa', promptFr: 'je suis pressé', options: ['tengo', 'tienes', 'tiene'], answer: 'tengo' },
+      { id: 'es-ser-yo-presente', verb: 'ser', tense: 'presente', prompt: 'yo ___ de Francia', promptFr: 'je suis de France', options: ['soy', 'eres', 'es'], answer: 'soy' },
     ],
   },
   {
@@ -247,19 +254,20 @@ export const ES_SCENARIOS: Scenario[] = [
     mcqs: [
       {
         prompt: 'El doctor pregunta: «¿Cómo se encuentra hoy?» Tú respondes:',
+        fr: 'Le médecin demande : « Comment vous sentez-vous aujourd’hui ? » Tu réponds :',
         options: [
-          { target: 'No me encuentro muy bien, me duele la cabeza.', correct: true },
-          { target: 'Hago una reunión importante.', correct: false },
-          { target: 'Un billete cuesta dos euros.', correct: false },
+          { target: 'No me encuentro muy bien, me duele la cabeza.', fr: 'Je ne me sens pas très bien, j’ai mal à la tête.', correct: true },
+          { target: 'Hago una reunión importante.', fr: 'J’ai une réunion importante.', correct: false },
+          { target: 'Un billete cuesta dos euros.', fr: 'Un billet coûte deux euros.', correct: false },
         ],
         hint: 'me duele... = pour décrire une douleur du moment',
       },
     ],
     conjugation: [
-      { id: 'es-deber-yo-presente', verb: 'deber', tense: 'presente', prompt: 'yo ___ descansar', options: ['debo', 'debes', 'debe'], answer: 'debo' },
-      { id: 'es-deber-tu-presente', verb: 'deber', tense: 'presente', prompt: 'tú ___ tomar esta pastilla', options: ['debes', 'debo', 'debe'], answer: 'debes' },
-      { id: 'es-hacer-yo-presente', verb: 'hacer', tense: 'presente', prompt: 'yo ___ deporte los lunes', options: ['hago', 'haces', 'hace'], answer: 'hago' },
-      { id: 'es-querer-tu-presente', verb: 'querer', tense: 'presente', prompt: 'tú ___ reservar?', options: ['quieres', 'quiero', 'quiere'], answer: 'quieres' },
+      { id: 'es-deber-yo-presente', verb: 'deber', tense: 'presente', prompt: 'yo ___ descansar', promptFr: 'je dois me reposer', options: ['debo', 'debes', 'debe'], answer: 'debo' },
+      { id: 'es-deber-tu-presente', verb: 'deber', tense: 'presente', prompt: 'tú ___ tomar esta pastilla', promptFr: 'tu dois prendre ce comprimé', options: ['debes', 'debo', 'debe'], answer: 'debes' },
+      { id: 'es-hacer-yo-presente', verb: 'hacer', tense: 'presente', prompt: 'yo ___ deporte los lunes', promptFr: 'je fais du sport le lundi', options: ['hago', 'haces', 'hace'], answer: 'hago' },
+      { id: 'es-querer-tu-presente', verb: 'querer', tense: 'presente', prompt: 'tú ___ reservar?', promptFr: 'tu veux réserver ?', options: ['quieres', 'quiero', 'quiere'], answer: 'quieres' },
     ],
   },
 ]

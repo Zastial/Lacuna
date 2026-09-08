@@ -128,6 +128,7 @@ async function onFinish(): Promise<void> {
         <template v-else-if="fondations.currentStep.kind === 'mcq'">
           <h2>Mise en situation</h2>
           <p class="prompt">{{ fondations.currentStep.mcq.prompt }}</p>
+          <p v-if="answered" class="prompt-fr">{{ fondations.currentStep.mcq.fr }}</p>
           <div class="options">
             <button
               v-for="(o, i) in fondations.currentStep.mcq.options"
@@ -138,6 +139,10 @@ async function onFinish(): Promise<void> {
               @click="selectMcqOption(o, fondations.currentStep.kind === 'mcq' ? fondations.currentStep.mcq.hint : '')"
             >
               {{ o.target }}
+              <!-- La traduction s'affiche sur TOUTES les options, pas
+                   seulement la bonne : comprendre pourquoi les autres étaient
+                   fausses est la moitié de l'exercice. -->
+              <span v-if="answered" class="option-fr">{{ o.fr }}</span>
             </button>
           </div>
           <p v-if="answered" class="feedback" :class="{ ok: isCorrect, ko: !isCorrect }">
@@ -165,9 +170,19 @@ async function onFinish(): Promise<void> {
               {{ o }}
             </button>
           </div>
-          <p v-if="answered" class="feedback" :class="{ ok: isCorrect, ko: !isCorrect }">
-            {{ isCorrect ? 'Exact.' : `La bonne réponse était « ${fondations.currentStep.item.answer} ».` }}
-          </p>
+          <template v-if="answered">
+            <p class="feedback" :class="{ ok: isCorrect, ko: !isCorrect }">
+              {{ isCorrect ? 'Exact.' : `La bonne réponse était « ${fondations.currentStep.item.answer} ».` }}
+            </p>
+            <!-- Phrase reconstituée avec le blanc rempli : c'est elle qu'on
+                 veut mémoriser, pas l'énoncé troué. -->
+            <p class="solution">
+              {{ fondations.currentStep.item.prompt.replace('___', fondations.currentStep.item.answer) }}
+            </p>
+            <p v-if="fondations.currentStep.item.promptFr" class="prompt-fr">
+              {{ fondations.currentStep.item.promptFr }}
+            </p>
+          </template>
         </template>
 
         <template v-else-if="fondations.currentStep.kind === 'done'">
@@ -432,6 +447,26 @@ h2 {
   font-weight: 500;
   font-size: 1.05rem;
   margin: 0 0 1rem;
+}
+.prompt-fr {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: -0.6rem 0 1rem;
+}
+.solution {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0.75rem 0 0.2rem;
+}
+.option-fr {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.75;
 }
 .verb-label {
   font-family: var(--font-body);
