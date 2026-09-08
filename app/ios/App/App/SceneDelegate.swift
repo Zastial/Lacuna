@@ -8,7 +8,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
+        // MainViewController et non CAPBridgeViewController : c'est lui qui
+        // enregistre les plugins natifs du target. Le contrôleur racine est
+        // créé ici, pas depuis Main.storyboard — modifier le storyboard n'a
+        // aucun effet.
+        window?.rootViewController = MainViewController()
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)

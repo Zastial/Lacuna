@@ -13,6 +13,7 @@
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		AC20AC20AC20AC20AC20AC20 /* LacunaTranslatePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10AC10AC10AC10AC10AC10 /* LacunaTranslatePlugin.swift */; };
 		AC40AC40AC40AC40AC40AC40 /* LacunaLinksPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC30AC30AC30AC30AC30AC30 /* LacunaLinksPlugin.swift */; };
+		AC60AC60AC60AC60AC60AC60 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC50AC50AC50AC50AC50AC50 /* MainViewController.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
@@ -27,6 +28,7 @@
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AC10AC10AC10AC10AC10AC10 /* LacunaTranslatePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LacunaTranslatePlugin.swift; sourceTree = "<group>"; };
 		AC30AC30AC30AC30AC30AC30 /* LacunaLinksPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LacunaLinksPlugin.swift; sourceTree = "<group>"; };
+		AC50AC50AC50AC50AC50AC50 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -73,6 +75,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				AC10AC10AC10AC10AC10AC10 /* LacunaTranslatePlugin.swift */,
 				AC30AC30AC30AC30AC30AC30 /* LacunaLinksPlugin.swift */,
+				AC50AC50AC50AC50AC50AC50 /* MainViewController.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -167,6 +170,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				AC20AC20AC20AC20AC20AC20 /* LacunaTranslatePlugin.swift in Sources */,
 				AC40AC40AC40AC40AC40AC40 /* LacunaLinksPlugin.swift in Sources */,
+				AC60AC60AC60AC60AC60AC60 /* MainViewController.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

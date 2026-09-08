@@ -25,6 +25,10 @@ public class LacunaLinksPlugin: CAPPlugin, CAPBridgedPlugin {
 
         DispatchQueue.main.async {
             UIApplication.shared.open(url, options: [:]) { opened in
+                // Trace conservée : c'est le seul moyen de distinguer « l'app
+                // cible est absente » d'un plugin non enregistré, les deux
+                // aboutissant au même repli côté JavaScript.
+                CAPLog.print("⚡️ LacunaLinks: open \(url.scheme ?? "?") -> \(opened)")
                 call.resolve(["opened": opened])
             }
         }
