@@ -30,6 +30,22 @@ type YouTubeGroup struct {
 	Title       string           `xml:"http://search.yahoo.com/mrss/ title"`
 	Description string           `xml:"http://search.yahoo.com/mrss/ description"`
 	Thumbnail   YouTubeThumbnail `xml:"http://search.yahoo.com/mrss/ thumbnail"`
+	Community   YouTubeCommunity `xml:"http://search.yahoo.com/mrss/ community"`
+}
+
+// Vues et likes voyagent dans le flux : c'est ce qui permet de classer par
+// popularité sans clé d'API. starRating/@count est le nombre de likes.
+type YouTubeCommunity struct {
+	StarRating YouTubeStarRating `xml:"http://search.yahoo.com/mrss/ starRating"`
+	Statistics YouTubeStatistics `xml:"http://search.yahoo.com/mrss/ statistics"`
+}
+
+type YouTubeStarRating struct {
+	Count int64 `xml:"count,attr"`
+}
+
+type YouTubeStatistics struct {
+	Views int64 `xml:"views,attr"`
 }
 
 type YouTubeThumbnail struct {

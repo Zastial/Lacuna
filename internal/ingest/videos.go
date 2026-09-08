@@ -3,6 +3,7 @@ package ingest
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -31,6 +32,23 @@ func SeedVideoChannels(ctx context.Context, pool *pgxpool.Pool, channels []SeedV
 		if err != nil {
 			return fmt.Errorf("seed video channel %s: %w", c.Name, err)
 		}
+	}
+
+	// Élagage : la liste du seed fait autorité. Sans ça, une chaîne retirée
+	// du code resterait en base et continuerait d'alimenter le fil — c'est
+	// exactement ce qui serait arrivé à une chaîne écartée pour cause
+	// d'inactivité. Les vidéos suivent par la contrainte ON DELETE CASCADE.
+	ids := make([]string, len(channels))
+	for i, c := range channels {
+		ids[i] = c.YouTubeChannelID
+	}
+	tag, err := pool.Exec(ctx,
+		`DELETE FROM video_channel WHERE NOT (youtube_channel_id = ANY($1::text[]))`, ids)
+	if err != nil {
+		return fmt.Errorf("prune video channels: %w", err)
+	}
+	if n := tag.RowsAffected(); n > 0 {
+		log.Printf("chaînes retirées du seed : %d supprimées", n)
 	}
 	return nil
 }
@@ -108,13 +126,15 @@ func IngestVideoChannel(ctx context.Context, pool *pgxpool.Pool, channel models.
 		}
 
 		tag, err := pool.Exec(ctx, `
-			INSERT INTO video (channel_id, youtube_video_id, title, description, thumbnail_url, published_at)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			INSERT INTO video (channel_id, youtube_video_id, title, description, thumbnail_url, published_at, views, likes)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			ON CONFLICT (channel_id, youtube_video_id) DO UPDATE SET
 				title = excluded.title, description = excluded.description,
-				thumbnail_url = excluded.thumbnail_url, published_at = excluded.published_at`,
+				thumbnail_url = excluded.thumbnail_url, published_at = excluded.published_at,
+				views = excluded.views, likes = excluded.likes`,
 			channel.ID, entry.VideoID, title, entry.Group.Description,
-			entry.Group.Thumbnail.URL, publishedAt)
+			entry.Group.Thumbnail.URL, publishedAt,
+			entry.Group.Community.Statistics.Views, entry.Group.Community.StarRating.Count)
 		if err != nil {
 			return result, fmt.Errorf("insert video %s: %w", entry.VideoID, err)
 		}

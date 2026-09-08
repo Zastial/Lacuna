@@ -137,6 +137,7 @@ func listArticles(pool *pgxpool.Pool) http.HandlerFunc {
 type videoJSON struct {
 	ID           int64   `json:"id"`
 	YouTubeID    string  `json:"youtube_id"`
+	Views        int64   `json:"views"`
 	ChannelName  string  `json:"channel_name"`
 	Lang         string  `json:"lang"`
 	Category     string  `json:"category"`
@@ -167,32 +168,34 @@ func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
 			limit = maxVideoLimit
 		}
 
-		// Alternance par chaîne plutôt que tri par date seule. Une chaîne
-		// prolifique monopolisait sinon le haut de la liste — MARCA
-		// occupait 15 des 24 places, et cocher un centre d'intérêt de plus
-		// ne changeait qu'une ligne enfouie en bas : le réglage donnait
-		// l'impression de ne rien faire.
+		// Deux règles de tri, chacune corrigeant un défaut constaté.
 		//
-		// row_number() classe les vidéos à l'intérieur de chaque chaîne, puis
-		// on trie par ce rang : la plus récente de chaque chaîne d'abord,
-		// ensuite la deuxième de chacune, et ainsi de suite. Chaque centre
-		// d'intérêt coché est donc visible dès les premières lignes.
+		// 1. Alternance par chaîne. Trié à plat, la chaîne la plus prolifique
+		//    remplissait l'écran — MARCA occupait 15 des 24 places, et cocher
+		//    un centre d'intérêt de plus ne changeait qu'une ligne enfouie.
+		//
+		// 2. Popularité plutôt que date, à l'intérieur de chaque chaîne. Le
+		//    flux Atom ne contient que les 15 dernières vidéos : trier par
+		//    vues dans ce vivier revient à proposer le meilleur de ce qui est
+		//    récent, pas le dernier téléversement quel qu'il soit. Mesuré,
+		//    l'écart entre chaînes va de 1 300 vues médianes à 276 000 — sans
+		//    ce tri, les deux occupaient la même place.
 		rows, err := pool.Query(r.Context(), `
-			SELECT id, youtube_video_id, name, lang, category,
+			SELECT id, youtube_video_id, views, name, lang, category,
 			       title, description, thumbnail_url, published_at
 			FROM (
-				SELECT v.id, v.youtube_video_id, c.name, c.lang, c.category,
+				SELECT v.id, v.youtube_video_id, v.views, c.name, c.lang, c.category,
 				       v.title, v.description, v.thumbnail_url, v.published_at,
 				       row_number() OVER (
 				           PARTITION BY v.channel_id
-				           ORDER BY v.published_at DESC NULLS LAST, v.id DESC
+				           ORDER BY v.views DESC, v.likes DESC, v.id DESC
 				       ) AS rang
 				FROM video v
 				JOIN video_channel c ON c.id = v.channel_id
 				WHERE (cardinality($1::text[]) = 0 OR c.lang = ANY($1::text[]))
 				  AND (cardinality($2::text[]) = 0 OR c.category = ANY($2::text[]))
 			) t
-			ORDER BY rang, published_at DESC NULLS LAST, id DESC
+			ORDER BY rang, views DESC, id DESC
 			LIMIT $3`,
 			langs, categories, limit)
 		if err != nil {
@@ -205,7 +208,7 @@ func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
 		for rows.Next() {
 			var v videoJSON
 			var publishedAt *time.Time
-			if err := rows.Scan(&v.ID, &v.YouTubeID, &v.ChannelName, &v.Lang, &v.Category,
+			if err := rows.Scan(&v.ID, &v.YouTubeID, &v.Views, &v.ChannelName, &v.Lang, &v.Category,
 				&v.Title, &v.Description, &v.ThumbnailURL, &publishedAt); err != nil {
 				writeError(w, http.StatusInternalServerError, err)
 				return
