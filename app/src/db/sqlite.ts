@@ -43,6 +43,19 @@ CREATE TABLE IF NOT EXISTS cultureg_review_state (
 );
 CREATE INDEX IF NOT EXISTS cultureg_review_state_due ON cultureg_review_state(lang, due_at);
 
+-- Miroir local des phrases d'exercice générées côté serveur. Recopiées ici
+-- pour que les leçons et les révisions fonctionnent sans réseau une fois la
+-- première visite faite.
+CREATE TABLE IF NOT EXISTS conjug_sentence (
+  key        TEXT PRIMARY KEY,
+  lang       TEXT NOT NULL,
+  lemma      TEXT NOT NULL,
+  tense      TEXT NOT NULL,
+  person     TEXT NOT NULL,
+  prompt     TEXT NOT NULL,
+  prompt_fr  TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS cultureg_stats (
   lang    TEXT PRIMARY KEY,
   correct INTEGER NOT NULL DEFAULT 0,

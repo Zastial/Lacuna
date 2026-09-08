@@ -19,6 +19,7 @@ import (
 func NewMux(pool *pgxpool.Pool, ai *ai.Client) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /correct", correct(ai))
+	mux.HandleFunc("POST /sentences", sentences(pool, ai))
 	mux.HandleFunc("GET /correct/status", correctStatus(ai))
 	mux.HandleFunc("GET /articles", listArticles(pool))
 	mux.HandleFunc("GET /videos", listVideos(pool))

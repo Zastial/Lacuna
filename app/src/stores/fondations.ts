@@ -9,6 +9,7 @@ import {
 } from '../db/repository'
 import { buildDrill, resolveGeneratedItem } from '../services/drillGenerator'
 import { lessonsForLang, lessonStates, type Lesson, type LessonState } from '../services/curriculum'
+import { ensureSentences, key as sentenceKey, loadLocalSentences, type SentenceMap } from '../services/sentences'
 import { shuffle } from '../services/shuffle'
 import { gradeVocabReviewState, isAcquired, newVocabReviewState, type Grade } from '../services/srs'
 import type { ConjugItem } from '../types/models'
@@ -35,8 +36,10 @@ interface FondationsState {
   lessons: Lesson[]
   states: Map<string, LessonState>
   dueCount: number
+  sentences: SentenceMap
   session: Session | null
   loading: boolean
+  preparing: boolean
 }
 
 export const useFondationsStore = defineStore('fondations', {
@@ -45,8 +48,10 @@ export const useFondationsStore = defineStore('fondations', {
     lessons: [],
     states: new Map(),
     dueCount: 0,
+    sentences: new Map(),
     session: null,
     loading: false,
+    preparing: false,
   }),
 
   getters: {
@@ -83,18 +88,45 @@ export const useFondationsStore = defineStore('fondations', {
       const acquired = new Set(states.filter(isAcquired).map((s) => s.itemId))
       this.states = lessonStates(this.lessons, acquired)
       this.dueCount = (await getDueVocabItems(this.lang, Date.now(), 999)).length
+      this.sentences = await loadLocalSentences(this.lang)
+    },
+
+    // withSentence remplace l'énoncé nu par la phrase contextualisée quand on
+    // en a une. L'id reste celui de l'item : la phrase n'est qu'un habillage,
+    // pas une autre connaissance à suivre séparément.
+    dressed(item: ConjugItem): ConjugItem {
+      const verbTense = item.id.startsWith('gen:') ? item.id.split(':') : null
+      if (!verbTense) return item
+      const [, , lemma, tense, person] = verbTense
+      const s = this.sentences.get(sentenceKey(lemma, tense, person))
+      return s ? { ...item, prompt: s.prompt, promptFr: s.promptFr } : item
     },
 
     // startLesson n'ouvre que la leçon courante : laisser sauter en avant
     // reproduirait le défaut d'origine, une liste d'exercices sans ordre ni
     // raison d'être.
-    startLesson(): void {
+    async startLesson(): Promise<void> {
       const lesson = this.currentLesson
       if (!lesson) return
+
+      // Les phrases manquantes sont demandées avant de commencer : arriver
+      // sur un « io ___ » nu puis le voir changer en cours d'exercice serait
+      // déroutant.
+      this.preparing = true
+      const fetched = await ensureSentences(
+        this.lang,
+        lesson.verb.lemma,
+        lesson.tense,
+        lesson.forms.map((f) => ({ person: f.person, form: f.form })),
+        this.sentences,
+      )
+      if (fetched) this.sentences = await loadLocalSentences(this.lang)
+      this.preparing = false
 
       const items = lesson.forms
         .map((f) => buildDrill(this.lang, lesson.verb, lesson.tense, f.person as never))
         .filter((i): i is ConjugItem => i !== null)
+        .map((i) => this.dressed(i))
 
       this.session = {
         kind: 'lesson',
@@ -115,6 +147,7 @@ export const useFondationsStore = defineStore('fondations', {
       const items = due
         .map((d) => findConjugItem(this.lang, d.itemId) ?? resolveGeneratedItem(d.itemId))
         .filter((i): i is ConjugItem => i !== null)
+        .map((i) => this.dressed(i))
       if (items.length === 0) return
 
       this.session = {

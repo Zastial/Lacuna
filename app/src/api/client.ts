@@ -60,3 +60,23 @@ export async function correctSentence(body: {
   }
   return (await res.json()) as { ok: boolean; corrected: string; explanation: string }
 }
+
+export async function fetchSentences(body: {
+  lang: string
+  lemma: string
+  tense: string
+  forms: { person: string; form: string }[]
+}): Promise<{ person: string; prompt: string; prompt_fr: string }[]> {
+  const res = await fetch(`${BASE_URL}/sentences`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    throw new Error(`POST /sentences: HTTP ${res.status}`)
+  }
+  const data = (await res.json()) as {
+    sentences: { person: string; prompt: string; prompt_fr: string }[]
+  }
+  return data.sentences ?? []
+}

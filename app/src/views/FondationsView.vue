@@ -30,9 +30,9 @@ async function onLang(id: string): Promise<void> {
   await fondations.setLang(id)
 }
 
-function start(): void {
+async function start(): Promise<void> {
   void tapFeedback()
-  fondations.startLesson()
+  await fondations.startLesson()
 }
 
 async function review(): Promise<void> {
@@ -95,8 +95,9 @@ async function finish(): Promise<void> {
       </div>
 
       <p v-if="fondations.loading" class="loading">Chargement…</p>
+      <p v-else-if="fondations.preparing" class="loading">Préparation de la leçon…</p>
 
-      <template v-else>
+      <template v-else-if="!fondations.preparing">
         <div class="progress-card glass">
           <p class="label">Ton parcours</p>
           <p class="progress-num">

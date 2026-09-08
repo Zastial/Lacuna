@@ -152,3 +152,94 @@ func (c *Client) Correct(ctx context.Context, lang, expected, expectedFr, said s
 	}
 	return &correction, nil
 }
+
+// --- Phrases d'exercice ---
+
+const sentencePrompt = `Tu écris des phrases d'exercice pour un francophone débutant en %s.
+
+On te donne un verbe et ses six formes conjuguées. Pour CHAQUE forme, écris une phrase courte et naturelle qui l'utilise, avec la forme remplacée par ___.
+
+Règles :
+- La phrase doit rendre la forme évidente par le contexte (le pronom sujet doit y figurer).
+- Vocabulaire du quotidien, 4 à 8 mots. Rien de littéraire.
+- La traduction française porte sur la phrase COMPLÈTE, forme incluse, telle qu'on la dirait vraiment.
+
+Réponds UNIQUEMENT en JSON :
+{"sentences":[{"person":"1sg","prompt":"io ___ italiano","prompt_fr":"je suis italien"}]}
+
+Reprends exactement les codes de personne fournis.`
+
+type SentenceForm struct {
+	Person string `json:"person"`
+	Form   string `json:"form"`
+}
+
+type Sentence struct {
+	Person   string `json:"person"`
+	Prompt   string `json:"prompt"`
+	PromptFr string `json:"prompt_fr"`
+}
+
+// Sentences produit une phrase par forme, en un seul appel pour tout le
+// verbe : six appels séparés coûteraient six fois plus de quota et
+// donneraient des phrases sans cohérence entre elles.
+func (c *Client) Sentences(ctx context.Context, lang, lemma, tense string, forms []SentenceForm) ([]Sentence, error) {
+	if !c.Enabled() {
+		return nil, fmt.Errorf("gemini: pas de clé configurée")
+	}
+	if len(forms) == 0 {
+		return nil, fmt.Errorf("gemini: aucune forme fournie")
+	}
+
+	language := "italien"
+	if lang == "es" {
+		language = "espagnol"
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "Verbe : %s\nTemps : %s\nFormes :\n", lemma, tense)
+	for _, f := range forms {
+		fmt.Fprintf(&b, "- %s : %s\n", f.Person, f.Form)
+	}
+
+	body, err := json.Marshal(geminiRequest{
+		SystemInstruction: &content{Parts: []part{{Text: fmt.Sprintf(sentencePrompt, language)}}},
+		Contents:          []content{{Parts: []part{{Text: b.String()}}}},
+		GenerationConfig:  &generationConfig{ResponseMimeType: "application/json", Temperature: 0.4},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("gemini: encode request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		endpoint+model+":generateContent?key="+c.apiKey, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("gemini: build request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("gemini: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var parsed geminiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return nil, fmt.Errorf("gemini: decode response: %w", err)
+	}
+	if parsed.Error != nil {
+		return nil, fmt.Errorf("gemini: %s", parsed.Error.Message)
+	}
+	if len(parsed.Candidates) == 0 || len(parsed.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("gemini: réponse vide")
+	}
+
+	var out struct {
+		Sentences []Sentence `json:"sentences"`
+	}
+	if err := json.Unmarshal([]byte(parsed.Candidates[0].Content.Parts[0].Text), &out); err != nil {
+		return nil, fmt.Errorf("gemini: réponse non conforme au schéma: %w", err)
+	}
+	return out.Sentences, nil
+}

@@ -133,3 +133,47 @@ function rowToVocabReviewState(row: Record<string, unknown>): VocabReviewState {
     synced: Boolean(row.synced),
   }
 }
+
+// --- Phrases d'exercice (miroir local du cache serveur) ---
+
+export interface StoredSentence {
+  lemma: string
+  tense: string
+  person: string
+  prompt: string
+  promptFr: string
+}
+
+export function sentenceKey(lang: string, lemma: string, tense: string, person: string): string {
+  return `${lang}:${lemma}:${tense}:${person}`
+}
+
+export async function getSentencesForLang(lang: string): Promise<StoredSentence[]> {
+  const db = await getDB()
+  const res = await db.query(
+    'SELECT lemma, tense, person, prompt, prompt_fr FROM conjug_sentence WHERE lang = ?',
+    [lang],
+  )
+  return (res.values ?? []).map((row) => ({
+    lemma: row.lemma as string,
+    tense: row.tense as string,
+    person: row.person as string,
+    prompt: row.prompt as string,
+    promptFr: row.prompt_fr as string,
+  }))
+}
+
+export async function saveSentences(lang: string, sentences: StoredSentence[]): Promise<void> {
+  if (sentences.length === 0) return
+  const db = await getDB()
+  // executeSet : une seule transaction côté plugin, pour la même raison
+  // qu'en tête de fichier — un run() par ligne ouvre sa propre transaction.
+  await db.executeSet(
+    sentences.map((s) => ({
+      statement: `INSERT INTO conjug_sentence (key, lang, lemma, tense, person, prompt, prompt_fr)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)
+                  ON CONFLICT(key) DO UPDATE SET prompt = excluded.prompt, prompt_fr = excluded.prompt_fr`,
+      values: [sentenceKey(lang, s.lemma, s.tense, s.person), lang, s.lemma, s.tense, s.person, s.prompt, s.promptFr],
+    })),
+  )
+}
