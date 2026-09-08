@@ -4,6 +4,7 @@ import HomeView from './views/HomeView.vue'
 import OnboardingView from './views/OnboardingView.vue'
 import FondationsView from './views/FondationsView.vue'
 import CultureGView from './views/CultureGView.vue'
+import ParlerView from './views/ParlerView.vue'
 import ArticlesView from './views/ArticlesView.vue'
 import SettingsView from './views/SettingsView.vue'
 import ErrorToast from './components/ErrorToast.vue'
@@ -13,7 +14,7 @@ import { useSettingsStore } from './stores/settings'
 import { useVideosStore } from './stores/videos'
 import { syncNotifications } from './services/notifications'
 
-type Screen = 'home' | 'fondations' | 'cultureg' | 'articles' | 'settings'
+type Screen = 'home' | 'fondations' | 'parler' | 'cultureg' | 'articles' | 'settings'
 
 const screen = ref<Screen>('home')
 
@@ -86,12 +87,14 @@ async function onOnboardingDone(): Promise<void> {
        produirait un chevauchement au lieu d'un enchaînement. -->
   <Transition v-else name="screen" mode="out-in">
     <FondationsView v-if="screen === 'fondations'" @back="onBack" />
+    <ParlerView v-else-if="screen === 'parler'" @back="onBack" />
     <CultureGView v-else-if="screen === 'cultureg'" @back="onBack" />
     <ArticlesView v-else-if="screen === 'articles'" @back="onBack" />
     <SettingsView v-else-if="screen === 'settings'" @back="onBack" />
     <HomeView
       v-else
       @fondations="screen = 'fondations'"
+      @parler="screen = 'parler'"
       @cultureg="screen = 'cultureg'"
       @articles="screen = 'articles'"
       @settings="screen = 'settings'"

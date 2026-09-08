@@ -11,6 +11,7 @@ import type { ApiVideo } from '../types/models'
 
 const emit = defineEmits<{
   fondations: []
+  parler: []
   cultureg: []
   articles: []
   settings: []
@@ -66,6 +67,9 @@ function formatDate(iso: string | null): string {
       <button class="nav-btn pill teal" @click="emit('fondations')">
         <span class="nav-label">Fondations</span>
         <span v-if="fondations.dueDrillCount > 0" class="nav-badge">{{ fondations.dueDrillCount }}</span>
+      </button>
+      <button class="nav-btn pill coral" @click="emit('parler')">
+        <span class="nav-label">Parler</span>
       </button>
       <button class="nav-btn pill gold" @click="emit('cultureg')">
         <span class="nav-label">Culture G</span>
@@ -157,6 +161,10 @@ function formatDate(iso: string | null): string {
 .nav-btn.teal {
   background: var(--teal);
   color: var(--on-teal);
+}
+.nav-btn.coral {
+  background: var(--coral);
+  color: var(--on-coral);
 }
 .nav-btn.gold {
   background: var(--gold);

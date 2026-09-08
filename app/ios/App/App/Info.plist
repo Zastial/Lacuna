@@ -81,5 +81,9 @@
 	<array>
 		<string>youtube</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pour t'entendre prononcer les phrases et te dire si c'est juste.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Pour transcrire ce que tu dis et le comparer à la phrase attendue.</string>
 </dict>
 </plist>

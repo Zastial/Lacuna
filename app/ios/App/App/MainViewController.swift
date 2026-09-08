@@ -17,6 +17,7 @@ class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(LacunaLinksPlugin())
         bridge?.registerPluginInstance(LacunaTranslatePlugin())
+        bridge?.registerPluginInstance(LacunaSpeechPlugin())
     }
 
     /// Fond aux couleurs de l'app sous la WebView.
