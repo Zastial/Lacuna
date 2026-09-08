@@ -1,1 +1,5 @@
 CAPACITOR_DEBUG = true
+
+// Réglages propres à la machine (identité de signature notamment).
+// Fichier optionnel et non versionné : le projet compile sans lui.
+#include? "local.xcconfig"
