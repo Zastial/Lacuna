@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { SPORTS, useSettingsStore } from '../stores/settings'
+import type { ThemeChoice } from '../stores/settings'
 import { sendPreview, syncNotifications } from '../services/notifications'
 import { prepareTranslation, translationStatus } from '../services/translate'
 import { tapFeedback } from '../services/feedback'
@@ -63,6 +64,17 @@ async function onHour(event: Event): Promise<void> {
 
 const previewState = ref<'idle' | 'ok' | 'denied' | 'empty'>('idle')
 
+const THEMES: { id: ThemeChoice; label: string }[] = [
+  { id: 'auto', label: 'Système' },
+  { id: 'light', label: 'Clair' },
+  { id: 'dark', label: 'Sombre' },
+]
+
+async function onTheme(theme: ThemeChoice): Promise<void> {
+  void tapFeedback()
+  await settings.setTheme(theme)
+}
+
 async function onPreview(): Promise<void> {
   void tapFeedback()
   previewState.value = await sendPreview(settings.$state)
@@ -77,6 +89,18 @@ async function onPreview(): Promise<void> {
     </header>
 
     <div class="body">
+      <p class="label section-label">Apparence</p>
+      <div class="seg">
+        <button
+          v-for="t in THEMES"
+          :key="t.id"
+          :class="{ active: settings.theme === t.id }"
+          @click="onTheme(t.id)"
+        >
+          {{ t.label }}
+        </button>
+      </div>
+
       <p class="label section-label">Langue des notifications</p>
       <div class="lang-switch">
         <button class="gold" :class="{ active: settings.targetLang === 'it' }" @click="onLang('it')">Italiano</button>
@@ -183,6 +207,26 @@ header {
   color: var(--ink-soft);
   font-size: 0.85rem;
   margin: 0 0 0.6rem;
+}
+.seg {
+  display: flex;
+  gap: 0.5rem;
+}
+.seg button {
+  flex: 1;
+  padding: 0.7rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--ink);
+  font-weight: 500;
+  cursor: pointer;
+}
+.seg button.active {
+  border-color: transparent;
+  background: var(--teal);
+  color: var(--on-teal);
+  font-weight: 700;
 }
 .lang-switch {
   display: flex;

@@ -13,11 +13,25 @@ export const SPORTS = [
   { id: 'formule-1', label: 'Formule 1' },
   { id: 'handball', label: 'Handball' },
   { id: 'athlétisme', label: 'Athlétisme' },
+  { id: 'volley', label: 'Volley' },
 ] as const
 
 const KEY = 'lacuna.settings'
 
+// applyTheme pose l'attribut lu par style.css. 'auto' le retire plutôt que
+// d'écrire une valeur : c'est l'absence d'attribut qui laisse la main à
+// prefers-color-scheme, une valeur figée l'écraserait.
+export function applyTheme(theme: ThemeChoice): void {
+  const root = document.documentElement
+  if (theme === 'auto') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', theme)
+}
+
+// 'auto' suit le réglage du système ; les deux autres l'ignorent.
+export type ThemeChoice = 'auto' | 'light' | 'dark'
+
 export interface SettingsState {
+  theme: ThemeChoice
   // Langue dans laquelle les notifications sont traduites.
   targetLang: string
   sports: string[]
@@ -30,6 +44,7 @@ export interface SettingsState {
 }
 
 const DEFAULTS: Omit<SettingsState, 'loaded'> = {
+  theme: 'auto',
   targetLang: 'it',
   sports: ['football'],
   notifySport: true,
@@ -53,15 +68,30 @@ export const useSettingsStore = defineStore('settings', {
           // préférences illisibles : on repart des défauts
         }
       }
+      applyTheme(this.theme)
       this.loaded = true
     },
 
     async save(): Promise<void> {
-      const { targetLang, sports, notifySport, notifyPhrase, notifyReview, notifyHour } = this
+      const { theme, targetLang, sports, notifySport, notifyPhrase, notifyReview, notifyHour } = this
       await Preferences.set({
         key: KEY,
-        value: JSON.stringify({ targetLang, sports, notifySport, notifyPhrase, notifyReview, notifyHour }),
+        value: JSON.stringify({
+          theme,
+          targetLang,
+          sports,
+          notifySport,
+          notifyPhrase,
+          notifyReview,
+          notifyHour,
+        }),
       })
+    },
+
+    async setTheme(theme: ThemeChoice): Promise<void> {
+      this.theme = theme
+      applyTheme(theme)
+      await this.save()
     },
 
     async setTargetLang(lang: string): Promise<void> {

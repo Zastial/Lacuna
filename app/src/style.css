@@ -42,8 +42,16 @@
   --font-body: -apple-system, system-ui, sans-serif;
 }
 
+/* Trois états de thème.
+   - « auto » : aucun attribut sur <html>, prefers-color-scheme décide.
+   - « light » : l'attribut neutralise le media query ci-dessous.
+   - « dark » : le bloc [data-theme='dark'] force la palette sombre, y
+     compris quand le système est en clair.
+   La palette sombre est donc écrite deux fois, à garder synchronisées :
+   une déclaration ne peut pas couvrir les deux sélecteurs à la fois, ils
+   sont de part et d'autre d'une frontière de media query. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #0d1a16;
     --bg-2: #14231d;
     --glass: rgba(255, 255, 255, 0.06);
@@ -74,6 +82,38 @@
     --plum-ink: #eccdff;
     --plum-wash: rgba(217, 174, 255, 0.2);
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d1a16;
+  --bg-2: #14231d;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --ink: #eaf6f0;
+  --ink-soft: #9fc2b4;
+  --ink-faint: #6a8c7e;
+  --line: rgba(255, 255, 255, 0.12);
+
+  --teal: #2fe0ae;
+  --on-teal: #00251a;
+  --teal-ink: #7dfad0;
+  --teal-wash: rgba(47, 224, 174, 0.18);
+
+  --coral: #ff9d7a;
+  --on-coral: #3d1408;
+  --coral-ink: #ffc2a8;
+  --coral-wash: rgba(255, 157, 122, 0.2);
+
+  --gold: #ffd873;
+  --on-gold: #3d2b04;
+  --gold-ink: #ffe9ad;
+  --gold-wash: rgba(255, 216, 115, 0.2);
+
+  --plum: #d9aeff;
+  --on-plum: #2c1442;
+  --plum-ink: #eccdff;
+  --plum-wash: rgba(217, 174, 255, 0.2);
 }
 
 * {
