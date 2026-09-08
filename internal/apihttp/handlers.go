@@ -234,13 +234,24 @@ func listArticles(pool *pgxpool.Pool) http.HandlerFunc {
 			limit = maxArticleLimit
 		}
 
+		// Même alternance que pour les vidéos : trié par date seule, la
+		// rubrique la plus active occupait toute la sélection du jour et
+		// cocher un sport de plus ne se voyait pas.
 		rows, err := pool.Query(r.Context(), `
-			SELECT a.id, f.source_name, f.lang, f.sport, a.title, a.summary, a.url, a.published_at, a.rare_ratio
-			FROM article a
-			JOIN article_feed f ON f.id = a.feed_id
-			WHERE ($1 = '' OR f.lang = $1)
-			  AND (cardinality($2::text[]) = 0 OR f.sport = ANY($2::text[]))
-			ORDER BY a.published_at DESC NULLS LAST, a.id DESC
+			SELECT id, source_name, lang, sport, title, summary, url, published_at, rare_ratio
+			FROM (
+				SELECT a.id, f.source_name, f.lang, f.sport, a.title, a.summary,
+				       a.url, a.published_at, a.rare_ratio,
+				       row_number() OVER (
+				           PARTITION BY a.feed_id
+				           ORDER BY a.published_at DESC NULLS LAST, a.id DESC
+				       ) AS rang
+				FROM article a
+				JOIN article_feed f ON f.id = a.feed_id
+				WHERE ($1 = '' OR f.lang = $1)
+				  AND (cardinality($2::text[]) = 0 OR f.sport = ANY($2::text[]))
+			) t
+			ORDER BY rang, published_at DESC NULLS LAST, id DESC
 			LIMIT $3`,
 			lang, sports, limit)
 		if err != nil {
@@ -309,14 +320,32 @@ func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
 			limit = maxVideoLimit
 		}
 
+		// Alternance par chaîne plutôt que tri par date seule. Une chaîne
+		// prolifique monopolisait sinon le haut de la liste — MARCA
+		// occupait 15 des 24 places, et cocher un centre d'intérêt de plus
+		// ne changeait qu'une ligne enfouie en bas : le réglage donnait
+		// l'impression de ne rien faire.
+		//
+		// row_number() classe les vidéos à l'intérieur de chaque chaîne, puis
+		// on trie par ce rang : la plus récente de chaque chaîne d'abord,
+		// ensuite la deuxième de chacune, et ainsi de suite. Chaque centre
+		// d'intérêt coché est donc visible dès les premières lignes.
 		rows, err := pool.Query(r.Context(), `
-			SELECT v.id, v.youtube_video_id, c.name, c.lang, c.category,
-			       v.title, v.description, v.thumbnail_url, v.published_at
-			FROM video v
-			JOIN video_channel c ON c.id = v.channel_id
-			WHERE ($1 = '' OR c.lang = $1)
-			  AND (cardinality($2::text[]) = 0 OR c.category = ANY($2::text[]))
-			ORDER BY v.published_at DESC NULLS LAST, v.id DESC
+			SELECT id, youtube_video_id, name, lang, category,
+			       title, description, thumbnail_url, published_at
+			FROM (
+				SELECT v.id, v.youtube_video_id, c.name, c.lang, c.category,
+				       v.title, v.description, v.thumbnail_url, v.published_at,
+				       row_number() OVER (
+				           PARTITION BY v.channel_id
+				           ORDER BY v.published_at DESC NULLS LAST, v.id DESC
+				       ) AS rang
+				FROM video v
+				JOIN video_channel c ON c.id = v.channel_id
+				WHERE ($1 = '' OR c.lang = $1)
+				  AND (cardinality($2::text[]) = 0 OR c.category = ANY($2::text[]))
+			) t
+			ORDER BY rang, published_at DESC NULLS LAST, id DESC
 			LIMIT $3`,
 			lang, categories, limit)
 		if err != nil {
