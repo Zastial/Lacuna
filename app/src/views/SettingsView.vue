@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { CATEGORIES, SPORTS, useSettingsStore } from '../stores/settings'
+import { CATEGORIES, LANGS, SPORTS, useSettingsStore } from '../stores/settings'
 import type { ThemeChoice } from '../stores/settings'
 import { sendPreview, syncNotifications } from '../services/notifications'
 import { prepareTranslation, translationStatus } from '../services/translate'
@@ -18,7 +18,7 @@ const mtStatus = ref<'installed' | 'supported' | 'unsupported' | 'checking'>('ch
 
 async function refreshMT(): Promise<void> {
   mtStatus.value = 'checking'
-  mtStatus.value = await translationStatus(settings.targetLang)
+  mtStatus.value = await translationStatus(settings.primaryLang)
 }
 
 onMounted(async () => {
@@ -28,7 +28,7 @@ onMounted(async () => {
 
 async function onDownloadModel(): Promise<void> {
   void tapFeedback()
-  await prepareTranslation(settings.targetLang)
+  await prepareTranslation(settings.primaryLang)
   await refreshMT()
   await apply()
 }
@@ -42,12 +42,12 @@ async function apply(): Promise<void> {
 }
 
 async function onLang(lang: string): Promise<void> {
-  await settings.setTargetLang(lang)
-  // Le fil vidéo suit la langue cible : la changer ici doit se voir sur
-  // l'accueil sans avoir à relancer l'app.
-  await videos.setLang(lang)
-  // La disponibilité du modèle dépend de la paire : changer de langue
-  // cible peut faire passer de « prêt » à « à télécharger ».
+  await settings.toggleLang(lang)
+  // Le fil vidéo suit les langues suivies : les changer ici doit se voir
+  // sur l'accueil sans avoir à relancer l'app.
+  await videos.fetch()
+  // La disponibilité du modèle dépend de la paire : changer de langue peut
+  // faire passer de « prêt » à « à télécharger ».
   await refreshMT()
   await apply()
 }
@@ -126,10 +126,18 @@ async function onPreview(): Promise<void> {
         </button>
       </div>
 
-      <p class="label section-label">Langue des notifications</p>
-      <div class="lang-switch">
-        <button class="gold" :class="{ active: settings.targetLang === 'it' }" @click="onLang('it')">Italiano</button>
-        <button class="plum" :class="{ active: settings.targetLang === 'es' }" @click="onLang('es')">Español</button>
+      <p class="label section-label">Tes langues</p>
+      <p class="hint">Vidéos, articles et notifications piochent dans celles-ci.</p>
+      <div class="chips">
+        <button
+          v-for="l in LANGS"
+          :key="l.id"
+          class="chip"
+          :class="{ on: settings.langs.includes(l.id) }"
+          @click="onLang(l.id)"
+        >
+          {{ l.flag }} {{ l.label }}
+        </button>
       </div>
 
       <p class="label section-label">Tes sports</p>
@@ -172,7 +180,7 @@ async function onPreview(): Promise<void> {
         />
       </label>
       <button v-if="mtStatus === 'supported'" class="preview-btn" @click="onDownloadModel">
-        Télécharger le modèle {{ settings.targetLang === 'es' ? 'espagnol' : 'italien' }}
+        Télécharger le modèle {{ settings.primaryLang === 'es' ? 'espagnol' : 'italien' }}
       </button>
 
       <button class="preview-btn" @click="onPreview">Envoyer un aperçu</button>

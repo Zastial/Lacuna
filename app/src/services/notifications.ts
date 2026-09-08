@@ -35,6 +35,14 @@ export function phraseOfTheDay(lang: string, dayIndex: number): { target: string
   return { target: line.target, fr: line.fr }
 }
 
+// langOfDay fait tourner les langues suivies d'un jour à l'autre. Envoyer
+// une notification par langue en doublerait le nombre pour un gain nul :
+// l'alternance donne les deux sans jamais empiler.
+function langOfDay(langs: string[], day: number): string | null {
+  if (langs.length === 0) return null
+  return langs[day % langs.length]
+}
+
 function dayIndex(): number {
   return Math.floor(Date.now() / 86_400_000)
 }
@@ -60,8 +68,11 @@ export async function syncNotifications(settings: SettingsState): Promise<void> 
     const at = nextOccurrence(settings.notifyHour)
     const notifications = []
 
-    if (settings.notifyPhrase) {
-      const phrase = phraseOfTheDay(settings.targetLang, dayIndex())
+    const day = dayIndex()
+    const lang = langOfDay(settings.langs, day)
+
+    if (settings.notifyPhrase && lang) {
+      const phrase = phraseOfTheDay(lang, day)
       if (phrase) {
         notifications.push({
           id: ID_PHRASE,
@@ -76,12 +87,19 @@ export async function syncNotifications(settings: SettingsState): Promise<void> 
       // Les segments audio ont disparu avec le mode podcast : ce qui reste
       // à réviser, ce sont les formes verbales de Fondations et les
       // questions de Culture G, chacune avec sa propre file FSRS.
+      // Somme sur toutes les langues suivies : la file de révision ne se
+      // scinde pas par langue du point de vue de l'utilisateur.
       const now = Date.now()
-      const [vocab, culture] = await Promise.all([
-        getDueVocabItems(settings.targetLang, now, 500),
-        countDueCultureItems(settings.targetLang, now),
-      ])
-      const due = vocab.length + culture
+      const counts = await Promise.all(
+        settings.langs.map(async (l) => {
+          const [vocab, culture] = await Promise.all([
+            getDueVocabItems(l, now, 500),
+            countDueCultureItems(l, now),
+          ])
+          return vocab.length + culture
+        }),
+      )
+      const due = counts.reduce((a, b) => a + b, 0)
       if (due > 0) {
         notifications.push({
           id: ID_REVIEW,
@@ -120,7 +138,11 @@ export async function syncNotifications(settings: SettingsState): Promise<void> 
 export async function sendPreview(settings: SettingsState): Promise<'ok' | 'denied' | 'empty'> {
   if (!(await ensurePermission())) return 'denied'
 
-  const phrase = phraseOfTheDay(settings.targetLang, dayIndex())
+  const day = dayIndex()
+  const lang = langOfDay(settings.langs, day)
+  if (!lang) return 'empty'
+
+  const phrase = phraseOfTheDay(lang, day)
   if (!phrase) return 'empty'
 
   await LocalNotifications.cancel({ notifications: [{ id: ID_PREVIEW }] })
@@ -150,15 +172,18 @@ async function sportHeadline(
 ): Promise<{ translated: string; original: string } | null> {
   if (settings.sports.length === 0) return null
 
+  const target = langOfDay(settings.langs, dayIndex())
+  if (!target) return null
+
   // Vérifier le moteur avant d'appeler l'API : sans traduction possible, la
   // notification ne partira pas, autant ne pas faire la requête réseau.
-  if ((await translationStatus(settings.targetLang)) !== 'installed') return null
+  if ((await translationStatus(target)) !== 'installed') return null
 
-  const articles = await listArticles({ lang: NATIVE_LANG, sports: settings.sports, limit: 1 })
+  const articles = await listArticles({ langs: [NATIVE_LANG], sports: settings.sports, limit: 1 })
   const headline = articles[0]?.title
   if (!headline) return null
 
-  const translated = await translateFromNative(headline, settings.targetLang)
+  const translated = await translateFromNative(headline, target)
   if (!translated) return null
 
   return { translated, original: headline }

@@ -34,6 +34,10 @@ onMounted(async () => {
   // Chargé avant tout affichage : c'est ce réglage qui décide si on montre
   // l'onboarding ou l'accueil, et un faux départ sur l'accueil se verrait.
   await settings.load()
+  // Les écrans mono-langue s'ouvrent sur la première langue suivie : garder
+  // 'it' en dur donnerait un écran hors sujet à qui n'apprend que l'espagnol.
+  void fondations.setLang(settings.primaryLang)
+  void cultureg.setLang(settings.primaryLang)
   // Pas avant l'onboarding : demander l'autorisation de notifier sur le
   // tout premier écran, avant que l'utilisateur sache ce qu'est l'app, est
   // le meilleur moyen de se faire refuser une bonne fois pour toutes.
@@ -52,7 +56,6 @@ function onBack(): void {
 // le fil doit être rechargé, sinon l'accueil montrerait le résultat des
 // réglages par défaut.
 async function onOnboardingDone(): Promise<void> {
-  videos.lang = settings.targetLang
   await videos.fetch()
   // L'utilisateur vient de choisir sa langue et ses sujets : la demande
   // d'autorisation arrive maintenant, quand elle a un sens.

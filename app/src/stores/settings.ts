@@ -40,13 +40,19 @@ export function applyTheme(theme: ThemeChoice): void {
 // 'auto' suit le réglage du système ; les deux autres l'ignorent.
 export type ThemeChoice = 'auto' | 'light' | 'dark'
 
+// Langues proposées. L'utilisateur peut en suivre plusieurs à la fois :
+// vidéos, articles et notifications puisent alors dans toutes.
+export const LANGS = [
+  { id: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { id: 'es', label: 'Español', flag: '🇪🇸' },
+] as const
+
 export interface SettingsState {
   theme: ThemeChoice
   // Faux tant que l'onboarding n'a pas été terminé une fois.
   onboarded: boolean
   categories: string[]
-  // Langue dans laquelle les notifications sont traduites.
-  targetLang: string
+  langs: string[]
   sports: string[]
   notifySport: boolean
   notifyPhrase: boolean
@@ -59,10 +65,10 @@ export interface SettingsState {
 const DEFAULTS: Omit<SettingsState, 'loaded'> = {
   theme: 'auto',
   onboarded: false,
-  // Par défaut tout est coché : sans choix, mieux vaut trop de contenu que
-  // pas de contenu du tout. L'onboarding remplace ça par un vrai choix.
-  categories: ['langue', 'sport', 'musique', 'informatique', 'auto'],
-  targetLang: 'it',
+  // Rien de coché au départ : l'onboarding demande un choix explicite, et
+  // pré-cocher reviendrait à répondre à la place de l'utilisateur.
+  categories: [],
+  langs: [],
   sports: ['football'],
   notifySport: true,
   notifyPhrase: true,
@@ -72,6 +78,15 @@ const DEFAULTS: Omit<SettingsState, 'loaded'> = {
 
 export const useSettingsStore = defineStore('settings', {
   state: (): SettingsState => ({ ...DEFAULTS, loaded: false }),
+
+  getters: {
+    // Langue de repli pour les écrans qui n'en affichent qu'une à la fois
+    // (Fondations, Culture G). 'it' quand rien n'est choisi, pour ne jamais
+    // rendre un écran vide.
+    primaryLang(state): string {
+      return state.langs[0] ?? 'it'
+    },
+  },
 
   actions: {
     async load(): Promise<void> {
@@ -94,7 +109,7 @@ export const useSettingsStore = defineStore('settings', {
         theme,
         onboarded,
         categories,
-        targetLang,
+        langs,
         sports,
         notifySport,
         notifyPhrase,
@@ -107,7 +122,7 @@ export const useSettingsStore = defineStore('settings', {
           theme,
           onboarded,
           categories,
-          targetLang,
+          langs,
           sports,
           notifySport,
           notifyPhrase,
@@ -135,8 +150,10 @@ export const useSettingsStore = defineStore('settings', {
       await this.save()
     },
 
-    async setTargetLang(lang: string): Promise<void> {
-      this.targetLang = lang
+    async toggleLang(id: string): Promise<void> {
+      this.langs = this.langs.includes(id)
+        ? this.langs.filter((l) => l !== id)
+        : [...this.langs, id]
       await this.save()
     },
 

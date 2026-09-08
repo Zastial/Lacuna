@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { CATEGORIES, useSettingsStore } from '../stores/settings'
+import { CATEGORIES, LANGS, useSettingsStore } from '../stores/settings'
+import LacunaMark from '../components/LacunaMark.vue'
 import { tapFeedback } from '../services/feedback'
 
 const emit = defineEmits<{ done: [] }>()
@@ -9,18 +10,18 @@ const settings = useSettingsStore()
 const step = ref(0)
 const LAST_STEP = 2
 
-// On ne laisse pas continuer sans langue ni sans au moins un centre
-// d'intérêt : arriver sur un écran vide au premier lancement est la pire
-// première impression possible, et c'est exactement ce qui arriverait.
+// Rien n'est pré-coché : le choix doit être explicite. En contrepartie on
+// ne laisse pas continuer sans au moins une langue et un centre d'intérêt,
+// sinon l'accueil serait vide au tout premier lancement.
 const canContinue = computed(() => {
-  if (step.value === 1) return Boolean(settings.targetLang)
+  if (step.value === 1) return settings.langs.length > 0
   if (step.value === 2) return settings.categories.length > 0
   return true
 })
 
 async function onLang(lang: string): Promise<void> {
   void tapFeedback()
-  await settings.setTargetLang(lang)
+  await settings.toggleLang(lang)
 }
 
 async function onCategory(id: string): Promise<void> {
@@ -47,6 +48,7 @@ async function next(): Promise<void> {
 
     <div class="body">
       <template v-if="step === 0">
+        <LacunaMark :size="92" class="hero" />
         <p class="kicker">Bienvenue</p>
         <h1>Lacuna</h1>
         <p class="lead">
@@ -58,16 +60,21 @@ async function next(): Promise<void> {
 
       <template v-else-if="step === 1">
         <p class="kicker">Étape 1</p>
-        <h1>Quelle langue ?</h1>
-        <p class="lead">Tu pourras en changer à tout moment.</p>
+        <h1>Quelles langues ?</h1>
+        <p class="lead">
+          Les deux si tu veux — vidéos, articles et notifications piocheront
+          alors dans l'une et l'autre.
+        </p>
         <div class="choices">
-          <button class="choice big" :class="{ on: settings.targetLang === 'it' }" @click="onLang('it')">
-            <span class="flag">🇮🇹</span>
-            <span>Italiano</span>
-          </button>
-          <button class="choice big" :class="{ on: settings.targetLang === 'es' }" @click="onLang('es')">
-            <span class="flag">🇪🇸</span>
-            <span>Español</span>
+          <button
+            v-for="l in LANGS"
+            :key="l.id"
+            class="choice big"
+            :class="{ on: settings.langs.includes(l.id) }"
+            @click="onLang(l.id)"
+          >
+            <span class="flag">{{ l.flag }}</span>
+            <span>{{ l.label }}</span>
           </button>
         </div>
       </template>
@@ -77,7 +84,7 @@ async function next(): Promise<void> {
         <h1>Qu'est-ce qui t'intéresse ?</h1>
         <p class="lead">
           On te proposera des vidéos et des temps forts récents sur ces
-          sujets, dans la langue choisie.
+          sujets, dans les langues choisies.
         </p>
         <div class="choices">
           <button
@@ -128,6 +135,9 @@ async function next(): Promise<void> {
 .body {
   flex: 1;
   overflow-y: auto;
+}
+.hero {
+  margin-bottom: 1.5rem;
 }
 .kicker {
   font-family: var(--font-body);

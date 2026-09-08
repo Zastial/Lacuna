@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { Browser } from '@capacitor/browser'
 import { useVideosStore } from '../stores/videos'
 import { useSettingsStore } from '../stores/settings'
 import { useFondationsStore } from '../stores/fondations'
 import { useCultureGStore } from '../stores/cultureg'
+import LacunaMark from '../components/LacunaMark.vue'
 import { ERROR_TEXT, reportError } from '../services/toast'
 import type { ApiVideo } from '../types/models'
 
@@ -22,9 +23,6 @@ const cultureg = useCultureGStore()
 
 onMounted(async () => {
   if (!settings.loaded) await settings.load()
-  // La langue des vidéos suit celle choisie à l'onboarding : proposer de
-  // l'italien à quelqu'un qui apprend l'espagnol n'aurait aucun sens.
-  videos.lang = settings.targetLang
   await videos.fetch()
 })
 
@@ -39,6 +37,17 @@ async function openVideo(video: ApiVideo): Promise<void> {
   }
 }
 
+// La marque remplace le mot « Lacuna » en tête : le nom est déjà sur
+// l'icône de l'app et sur l'écran d'accueil du téléphone, le répéter ne
+// disait rien. À la place, un salut qui situe le moment de la journée.
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return 'Bonne nuit'
+  if (h < 12) return 'Bonjour'
+  if (h < 18) return 'Bon après-midi'
+  return 'Bonsoir'
+})
+
 function formatDate(iso: string | null): string {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
@@ -47,11 +56,9 @@ function formatDate(iso: string | null): string {
 
 <template>
   <div class="home">
-    <header class="top glass">
-      <div class="top-text">
-        <p class="wordmark">Lacuna</p>
-        <p class="label">Ton compagnon de langues</p>
-      </div>
+    <header class="top">
+      <LacunaMark :size="46" />
+      <p class="greeting">{{ greeting }}</p>
       <button class="settings-btn" aria-label="Réglages" @click="emit('settings')">⚙</button>
     </header>
 
@@ -109,24 +116,17 @@ function formatDate(iso: string | null): string {
 .top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.1rem 1.25rem;
-  margin-bottom: 1.25rem;
+  gap: 0.85rem;
+  padding: 0.4rem 0.25rem;
+  margin-bottom: 1.5rem;
 }
-.wordmark {
+.greeting {
+  flex: 1;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   margin: 0;
   color: var(--teal-ink);
-}
-.top .label {
-  margin-top: 0.3rem;
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
-  color: var(--ink-soft);
 }
 .settings-btn {
   flex: none;

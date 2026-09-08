@@ -7,7 +7,6 @@ import type { ApiVideo } from '../types/models'
 const DAILY_LIMIT = 24
 
 interface VideosState {
-  lang: string
   videos: ApiVideo[]
   loading: boolean
   error: string | null
@@ -15,18 +14,12 @@ interface VideosState {
 
 export const useVideosStore = defineStore('videos', {
   state: (): VideosState => ({
-    lang: 'it',
     videos: [],
     loading: false,
     error: null,
   }),
 
   actions: {
-    async setLang(lang: string): Promise<void> {
-      this.lang = lang
-      await this.fetch()
-    },
-
     async fetch(): Promise<void> {
       this.loading = true
       this.error = null
@@ -34,7 +27,7 @@ export const useVideosStore = defineStore('videos', {
         const settings = useSettingsStore()
         if (!settings.loaded) await settings.load()
         this.videos = await listVideos({
-          lang: this.lang,
+          langs: settings.langs,
           categories: settings.categories,
           limit: DAILY_LIMIT,
         })

@@ -41,7 +41,7 @@ export const useArticlesStore = defineStore('articles', {
         const settings = useSettingsStore()
         if (this.lang === 'fr' && !settings.loaded) await settings.load()
         const sports = this.lang === 'fr' ? settings.sports : []
-        this.articles = await listArticles({ lang: this.lang, limit: DAILY_LIMIT, sports })
+        this.articles = await listArticles({ langs: [this.lang], limit: DAILY_LIMIT, sports })
       } catch (err) {
         this.error = err instanceof Error ? err.message : String(err)
       } finally {

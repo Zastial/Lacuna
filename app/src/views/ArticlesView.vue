@@ -11,8 +11,12 @@ const emit = defineEmits<{ back: [] }>()
 const articles = useArticlesStore()
 const settings = useSettingsStore()
 
-onMounted(() => {
-  void articles.fetch()
+onMounted(async () => {
+  if (!settings.loaded) await settings.load()
+  // Ouvrir sur une langue que l'utilisateur ne suit pas donnerait une liste
+  // vide dès l'arrivée.
+  if (!settings.langs.includes(articles.lang)) articles.lang = settings.primaryLang
+  await articles.fetch()
 })
 
 function onHeaderBack(): void {
@@ -51,15 +55,24 @@ async function openFull(article: ApiArticle): Promise<void> {
     </header>
 
     <div v-if="!articles.current" class="picker">
+      <!-- Les onglets ne montrent que les langues suivies : proposer de
+           l'espagnol à quelqu'un qui n'apprend que l'italien reviendrait à
+           ignorer son choix d'onboarding. -->
       <div class="lang-switch">
-        <button class="gold" :class="{ active: articles.lang === 'it' }" @click="articles.setLang('it')">Italiano</button>
-        <button class="plum" :class="{ active: articles.lang === 'es' }" @click="articles.setLang('es')">Español</button>
+        <button
+          v-for="l in settings.langs"
+          :key="l"
+          :class="[l === 'es' ? 'plum' : 'gold', { active: articles.lang === l }]"
+          @click="articles.setLang(l)"
+        >
+          {{ l === 'es' ? 'Español' : 'Italiano' }}
+        </button>
         <button class="teal" :class="{ active: articles.lang === 'fr' }" @click="articles.setLang('fr')">Sport</button>
       </div>
 
       <p v-if="articles.lang === 'fr'" class="sport-note">
         L'Équipe, filtré sur tes sports. Tu connais déjà le sens : l'exercice
-        est de le redire en {{ settings.targetLang === 'es' ? 'espagnol' : 'italien' }}.
+        est de le redire en {{ settings.primaryLang === 'es' ? 'espagnol' : 'italien' }}.
       </p>
 
       <p v-if="articles.loading" class="hint">Chargement…</p>

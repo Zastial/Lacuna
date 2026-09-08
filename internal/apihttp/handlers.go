@@ -38,6 +38,24 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
+// csvParam lit un paramètre de requête en liste séparée par des virgules.
+// Une liste vide vaut « pas de filtre » côté SQL : c'est ce qui permet à
+// l'app d'envoyer les choix de l'utilisateur d'un seul coup, y compris
+// quand il n'a rien restreint.
+func csvParam(r *http.Request, name string) []string {
+	out := []string{}
+	raw := r.URL.Query().Get(name)
+	if raw == "" {
+		return out
+	}
+	for _, v := range strings.Split(raw, ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
 type articleJSON struct {
 	ID          int64    `json:"id"`
 	SourceName  string   `json:"source_name"`
@@ -58,18 +76,8 @@ const maxArticleLimit = 50
 // cette langue, limité par `limit` (défaut 20, plafond 50).
 func listArticles(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		lang := r.URL.Query().Get("lang")
-		// `sports` accepte une liste séparée par des virgules : l'app envoie
-		// les préférences de l'utilisateur d'un coup plutôt qu'un appel par
-		// sport.
-		sports := []string{}
-		if raw := r.URL.Query().Get("sports"); raw != "" {
-			for _, s := range strings.Split(raw, ",") {
-				if s = strings.TrimSpace(s); s != "" {
-					sports = append(sports, s)
-				}
-			}
-		}
+		langs := csvParam(r, "langs")
+		sports := csvParam(r, "sports")
 
 		limit := defaultArticleLimit
 		if raw := r.URL.Query().Get("limit"); raw != "" {
@@ -95,12 +103,12 @@ func listArticles(pool *pgxpool.Pool) http.HandlerFunc {
 				       ) AS rang
 				FROM article a
 				JOIN article_feed f ON f.id = a.feed_id
-				WHERE ($1 = '' OR f.lang = $1)
+				WHERE (cardinality($1::text[]) = 0 OR f.lang = ANY($1::text[]))
 				  AND (cardinality($2::text[]) = 0 OR f.sport = ANY($2::text[]))
 			) t
 			ORDER BY rang, published_at DESC NULLS LAST, id DESC
 			LIMIT $3`,
-			lang, sports, limit)
+			langs, sports, limit)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return
@@ -146,16 +154,8 @@ const maxVideoLimit = 60
 // l'utilisateur a choisi à l'onboarding.
 func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		lang := r.URL.Query().Get("lang")
-
-		categories := []string{}
-		if raw := r.URL.Query().Get("categories"); raw != "" {
-			for _, c := range strings.Split(raw, ",") {
-				if c = strings.TrimSpace(c); c != "" {
-					categories = append(categories, c)
-				}
-			}
-		}
+		langs := csvParam(r, "langs")
+		categories := csvParam(r, "categories")
 
 		limit := defaultVideoLimit
 		if raw := r.URL.Query().Get("limit"); raw != "" {
@@ -189,12 +189,12 @@ func listVideos(pool *pgxpool.Pool) http.HandlerFunc {
 				       ) AS rang
 				FROM video v
 				JOIN video_channel c ON c.id = v.channel_id
-				WHERE ($1 = '' OR c.lang = $1)
+				WHERE (cardinality($1::text[]) = 0 OR c.lang = ANY($1::text[]))
 				  AND (cardinality($2::text[]) = 0 OR c.category = ANY($2::text[]))
 			) t
 			ORDER BY rang, published_at DESC NULLS LAST, id DESC
 			LIMIT $3`,
-			lang, categories, limit)
+			langs, categories, limit)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return
