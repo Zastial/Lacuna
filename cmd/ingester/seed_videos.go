@@ -23,9 +23,10 @@ import "lacuna/internal/ingest"
 // populaire, mais uniquement en anglais — la règle de langue prime),
 // @SelectaVision (dessin animé jeunesse plutôt qu'animé, ~1 000 vues).
 //
-// Les bandes-annonces d'animés arrivent donc par Netflix et Prime Video, qui
-// en publient des doublages en italien et en espagnol, faute d'une chaîne
-// Crunchyroll localisée.
+// Les déclinaisons localisées de Crunchyroll existent bien, contrairement à
+// ce que ma recherche avait conclu : @Crunchyroll_Italia et
+// @CrunchyrollenEspañol. Elles sont l'unique source d'animé authentique du
+// catalogue, Netflix et Prime n'en publiant que des doublages ponctuels.
 var videoChannels = []ingest.SeedVideoChannel{
 	// Italien
 	{YouTubeChannelID: "UCegEedDeryCYSVT7eBCm-RQ", Name: "Podcast Italiano", Lang: "it", Category: "langue"},       // ~10 400 vues
@@ -39,6 +40,7 @@ var videoChannels = []ingest.SeedVideoChannel{
 	{YouTubeChannelID: "UCAaBGiU1C74gFgRcJTivj4w", Name: "Prime Video Italia", Lang: "it", Category: "series"},     // ~9 000
 	{YouTubeChannelID: "UCi_T2R1AzOCun4-PI4Or2ng", Name: "Netflix Italia", Lang: "it", Category: "series"},         // ~5 600
 	{YouTubeChannelID: "UCF6y68V96phFE4BJPIlAu0g", Name: "Disney+ Italia", Lang: "it", Category: "series"},         // ~700
+	{YouTubeChannelID: "UC9hif6M6zLXb_lRkQpalE4g", Name: "Crunchyroll Italia", Lang: "it", Category: "series"},     // ~1 600, seule source d'animé en italien
 
 	// Espagnol
 	{YouTubeChannelID: "UCouyFdE9-Lrjo3M_2idKq1A", Name: "Dreaming Spanish", Lang: "es", Category: "langue"},    // ~15 800
@@ -49,10 +51,11 @@ var videoChannels = []ingest.SeedVideoChannel{
 	{YouTubeChannelID: "UCok_yhjwg4WSx3s_2Yh8ZjQ", Name: "Topes de Gama", Lang: "es", Category: "informatique"}, // ~22 000
 	{YouTubeChannelID: "UCmS75G-98QihSusY7NfCZtw", Name: "Bizarrap", Lang: "es", Category: "musique"},           // ~51 650 000
 	// Journaliste F1 : l'analyse d'un passionné plutôt qu'une dépêche.
-	{YouTubeChannelID: "UCklUGqDiqiIak4PWh-qbhxQ", Name: "Albert Fábrega", Lang: "es", Category: "auto"},       // ~94 800
-	{YouTubeChannelID: "UCriizUOvtsM4mhLw1KGVzvQ", Name: "SoyMotor", Lang: "es", Category: "auto"},             // ~38 700
-	{YouTubeChannelID: "UCfdj_0piEWBCfAueG4V32Ag", Name: "Diariomotor", Lang: "es", Category: "auto"},          // ~14 100
-	{YouTubeChannelID: "UC1JAfFo5AJSlXITRAGguAOg", Name: "Disney+ España", Lang: "es", Category: "series"},     // ~5 700
-	{YouTubeChannelID: "UCMjBY_FJmMLAPUI0Dxntbsw", Name: "Prime Video España", Lang: "es", Category: "series"}, // ~5 200
-	{YouTubeChannelID: "UCT2UUebPuLke_BShrDh_YEA", Name: "Netflix España", Lang: "es", Category: "series"},     // ~4 000
+	{YouTubeChannelID: "UCklUGqDiqiIak4PWh-qbhxQ", Name: "Albert Fábrega", Lang: "es", Category: "auto"},           // ~94 800
+	{YouTubeChannelID: "UCriizUOvtsM4mhLw1KGVzvQ", Name: "SoyMotor", Lang: "es", Category: "auto"},                 // ~38 700
+	{YouTubeChannelID: "UCfdj_0piEWBCfAueG4V32Ag", Name: "Diariomotor", Lang: "es", Category: "auto"},              // ~14 100
+	{YouTubeChannelID: "UC1JAfFo5AJSlXITRAGguAOg", Name: "Disney+ España", Lang: "es", Category: "series"},         // ~5 700
+	{YouTubeChannelID: "UCMjBY_FJmMLAPUI0Dxntbsw", Name: "Prime Video España", Lang: "es", Category: "series"},     // ~5 200
+	{YouTubeChannelID: "UCT2UUebPuLke_BShrDh_YEA", Name: "Netflix España", Lang: "es", Category: "series"},         // ~4 000
+	{YouTubeChannelID: "UC-5MT-BUxTzkPTWMediyV0w", Name: "Crunchyroll en Español", Lang: "es", Category: "series"}, // ~6 000
 }
