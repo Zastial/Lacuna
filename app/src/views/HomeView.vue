@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { Browser } from '@capacitor/browser'
 import { useVideosStore } from '../stores/videos'
 import { useSettingsStore } from '../stores/settings'
 import { useFondationsStore } from '../stores/fondations'
 import { useCultureGStore } from '../stores/cultureg'
 import LacunaMark from '../components/LacunaMark.vue'
+import { openYouTube } from '../services/links'
 import { ERROR_TEXT, reportError } from '../services/toast'
 import type { ApiVideo } from '../types/models'
 
@@ -26,12 +26,12 @@ onMounted(async () => {
   await videos.fetch()
 })
 
-// Les vidéos s'ouvrent dans YouTube, pas dans un lecteur intégré : l'embed
-// tiers casse régulièrement (vidéos bloquées hors du site), et l'app native
-// gère déjà le plein écran, les sous-titres et la reprise de lecture.
+// Direction l'app YouTube, pas un lecteur intégré : l'embed tiers casse sur
+// les vidéos bloquées hors du site, et l'app native gère déjà plein écran,
+// sous-titres et reprise de lecture. Le repli web est dans services/links.
 async function openVideo(video: ApiVideo): Promise<void> {
   try {
-    await Browser.open({ url: `https://www.youtube.com/watch?v=${video.youtube_id}` })
+    await openYouTube(video.youtube_id)
   } catch (err) {
     reportError(err, () => openVideo(video))
   }
